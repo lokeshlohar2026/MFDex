@@ -105,46 +105,99 @@
     <!-- Sidebar Inspector -->
     <div class="sidebar" id="sidebar">
       <div class="sidebar-header">
-        <span class="side-tag" id="sideTierTag">National Front</span>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="side-tag" id="sideTierTag">National Front</span>
+          <span class="q1-banner">Q1 FY27 Horizon</span>
+        </div>
         <div class="side-title" id="sideTitle">All India Universe</div>
         <div class="side-subtitle" id="sideSubtitle">Verified Independent MFD & RIA Telemetry</div>
+
+        <!-- Horizon Stepper -->
+        <div class="horizon-bar">
+          <span class="horizon-lbl">Period</span>
+          <div class="horizon-stepper">
+            <button class="h-pill" id="pillApr" onclick="switchHorizon('Apr-26')">Apr-26</button>
+            <button class="h-pill" id="pillMay" onclick="switchHorizon('May-26')">May-26</button>
+            <button class="h-pill active" id="pillJun" onclick="switchHorizon('Jun-26')">Jun-26</button>
+            <button class="h-pill q1-tag" id="pillQ1" onclick="switchHorizon('Q1')">3M Trend</button>
+          </div>
+        </div>
       </div>
 
-      <!-- Hero Net Added Card -->
-      <div class="hero-card">
-        <div class="hero-label">Net New Business Retained in Month</div>
+      <!-- Hero Net Added Card with 3M Sparkbars -->
+      <div class="hero-card" id="heroCard">
+        <div class="hero-label-row">
+          <div class="hero-label" id="heroLabel">Net New Business Retained</div>
+          <div class="trend-delta-pill" id="sideTrendDelta">MoM Trajectory</div>
+        </div>
         <div class="hero-val" id="sideNet">+₹8.70 Cr</div>
+        
         <div class="hero-strip">
-          <span id="sideGross">Gross Inflow: ₹28.04 Cr</span>
-          <span id="sideOutflow">Total Outflow: ₹19.34 Cr</span>
+          <span id="sideGross">Gross: ₹28.04 Cr</span>
+          <span id="sideOutflow">Outflow: ₹19.34 Cr</span>
           <span id="sideRetention" style="font-weight:700;">Retention: 31.0%</span>
         </div>
-        <div class="hero-substrip" id="sideInflowBreakdown">
-          <span>Inflows: <b>Lump: ₹20.5 Cr</b> | <b>SIP: ₹5.2 Cr</b> | <b>STP: ₹2.3 Cr</b></span>
+
+        <!-- 3-Month Net Flow Sparkbars -->
+        <div class="hero-trend-wrap" id="heroTrendWrap">
+          <div class="hero-trend-title">
+            <span>3-Month Net Added Progression</span>
+            <span id="retentionProgression" style="color:#15803d; font-weight:600;"></span>
+          </div>
+          <div class="hero-sparkbars" id="heroSparkBars">
+            <!-- Rendered dynamically -->
+          </div>
         </div>
       </div>
 
-      <!-- 4-Tile Performance Grid -->
+      <!-- 3-Month Inflow Sourcing Evolution (Lump vs SIP vs STP) -->
+      <div class="sourcing-box">
+        <div class="sourcing-title">
+          <span>Inflow Sourcing Evolution</span>
+          <span class="sourcing-legend"><span class="dot-lump"></span>Lump <span class="dot-sip"></span>SIP <span class="dot-stp"></span>STP</span>
+        </div>
+        <div class="sourcing-rows" id="sourcingTimeline">
+          <!-- Dynamically populated 3 rows for Apr, May, Jun -->
+        </div>
+      </div>
+
+      <!-- 4-Tile Performance Grid with Sparkline Badges -->
       <div class="metric-grid">
         <div class="m-card">
-          <div class="m-title">Monthly SIP Harvest</div>
+          <div class="m-title-row">
+            <span class="m-title">Monthly SIP Harvest</span>
+            <span class="m-delta" id="sideSipDelta">+0.7%</span>
+          </div>
           <div class="m-val" id="sideSip">₹11.16 Cr</div>
           <div class="m-sub" id="sideSipCount">29,641 Debits</div>
+          <div class="m-trend-strip" id="sideSipTrend"></div>
         </div>
         <div class="m-card">
-          <div class="m-title">Avg Monthly SIP Ticket</div>
+          <div class="m-title-row">
+            <span class="m-title">Avg Monthly SIP Ticket</span>
+            <span class="m-delta" id="sideAvgTicketDelta">Stable</span>
+          </div>
           <div class="m-val" id="sideAvgTicket">₹3,765</div>
           <div class="m-sub">per investor debit</div>
+          <div class="m-trend-strip" id="sideTicketTrend"></div>
         </div>
         <div class="m-card">
-          <div class="m-title">Closing AUM Balance</div>
+          <div class="m-title-row">
+            <span class="m-title">Closing AUM Balance</span>
+            <span class="m-delta" id="sideAumDelta">+2.3%</span>
+          </div>
           <div class="m-val" id="sideAum">₹2,217 Cr</div>
           <div class="m-sub">Snapshot Wealth</div>
+          <div class="m-trend-strip" id="sideAumTrend"></div>
         </div>
         <div class="m-card">
-          <div class="m-title">Active MFD Density</div>
+          <div class="m-title-row">
+            <span class="m-title">Active MFD Density</span>
+            <span class="m-delta" id="sideMfdsDelta">Footprint</span>
+          </div>
           <div class="m-val" id="sideMfds">150 MFDs</div>
           <div class="m-sub">competing advisors</div>
+          <div class="m-trend-strip" id="sideMfdsTrend"></div>
         </div>
       </div>
 
@@ -170,13 +223,17 @@
         </div>
       </div>
 
-      <!-- Schemes Section -->
+      <!-- Schemes Section with Product Rotation Intelligence -->
       <div class="section-head">
-        <span class="section-title">Top Scheme Categories</span>
+        <div>
+          <span class="section-title">Product Intelligence</span>
+          <div class="section-subtitle" id="schemeSubtitle">Top Scheme Inflows</div>
+        </div>
         <div class="toggle-group">
           <button class="t-btn active" id="tabGross" onclick="setSchemeTab('gross')">Inflows</button>
           <button class="t-btn" id="tabSip" onclick="setSchemeTab('sip')">SIP Book</button>
           <button class="t-btn" id="tabAum" onclick="setSchemeTab('aum')">AUM</button>
+          <button class="t-btn highlight-tab" id="tabRotation" onclick="setSchemeTab('rotation')">3M Rotation</button>
         </div>
       </div>
 

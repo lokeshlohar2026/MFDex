@@ -53,11 +53,14 @@
 
     // State Variables
     let currentMonth = 'Jun-26';
+    let currentHorizon = 'Jun-26';
     let selectedState = null;
     let selectedDistrict = null;
     let selectedPincode = null;
     let stateSummaries = {};
     let currentSchemes = [];
+    let currentTrends = [];
+    let currentSchemeRotation = [];
     let currentSchemeTab = 'gross';
     let currentHeatMode = 'crisp';
     let currentHeatOpacity = 0.85;
@@ -77,6 +80,8 @@
           const sel = document.getElementById('monthSelect');
           sel.innerHTML = mData.months.map(m => `<option value="${m}" ${m===mData.default?'selected':''}>${m}</option>`).join('');
           currentMonth = mData.default;
+          currentHorizon = currentMonth;
+          updateHorizonPillUI();
         }
 
         // 2. Fetch GeoJSONs
@@ -103,6 +108,8 @@
 
     async function onMonthChange() {
       currentMonth = document.getElementById('monthSelect').value;
+      currentHorizon = currentMonth;
+      updateHorizonPillUI();
       await loadMonthData();
     }
 
@@ -131,7 +138,7 @@
         } else if (selectedState) {
           await loadStateDetails(selectedState);
         } else {
-          renderSidebarNational(natData.summary, natData.schemes);
+          renderSidebarNational(natData.summary, natData.schemes, natData.monthly_trends, natData.scheme_rotation);
         }
       } catch (e) {
         console.error("Error loading month data:", e);
@@ -393,7 +400,7 @@
         const res = await fetch(`/api/pincode_details?month=${currentMonth}&pincode=${pin}`);
         const data = await res.json();
         if (data.summary) {
-          renderSidebarPincode(data.summary, data.schemes);
+          renderSidebarPincode(data.summary, data.schemes, data.monthly_trends, data.scheme_rotation);
         }
       } catch (e) {
         console.error("Error loading pin details:", e);
@@ -408,7 +415,7 @@
         const res = await fetch(`/api/district_details?month=${currentMonth}&district=${encodeURIComponent(district)}&state=${encodeURIComponent(state)}`);
         const data = await res.json();
         if (data.summary) {
-          renderSidebarDistrict(data.summary, data.schemes);
+          renderSidebarDistrict(data.summary, data.schemes, data.monthly_trends, data.scheme_rotation);
         }
       } catch (e) {
         console.error("Error loading district details:", e);
@@ -423,7 +430,7 @@
         const res = await fetch(`/api/state_details?month=${currentMonth}&state=${encodeURIComponent(state)}`);
         const data = await res.json();
         if (data.summary) {
-          renderSidebarState(data.summary, data.schemes);
+          renderSidebarState(data.summary, data.schemes, data.monthly_trends, data.scheme_rotation);
         }
       } catch (e) {
         console.error("Error loading state details:", e);
@@ -432,7 +439,7 @@
       }
     }
 
-    function renderSidebarNational(sum, schemes) {
+    function renderSidebarNational(sum, schemes, trends, rotation) {
       document.getElementById('sideTierTag').innerText = "National Universe";
       document.getElementById('sideTitle').innerText = "All India Front";
       document.getElementById('sideSubtitle').innerText = "Verified Independent MFD & RIA Telemetry";
@@ -440,11 +447,11 @@
       renderMetricsToSidebar(
         sum.nat_net || 0, sum.nat_gross || 0, sum.nat_outflow || 0,
         sum.nat_sip || 0, sum.nat_stp || 0, sum.nat_sip_cnt || 0, sum.avg_sip_ticket || 0,
-        sum.nat_aum || 0, sum.nat_mfds_footprint || 0, schemes
+        sum.nat_aum || 0, sum.nat_mfds_footprint || 0, schemes, trends, rotation
       );
     }
 
-    function renderSidebarState(sum, schemes) {
+    function renderSidebarState(sum, schemes, trends, rotation) {
       document.getElementById('sideTierTag').innerText = "State Regional Tier";
       document.getElementById('sideTitle').innerText = sum.state;
       document.getElementById('sideSubtitle').innerText = `${(sum.pincodes_count || 0).toLocaleString()} Active Postal Pincodes`;
@@ -452,11 +459,11 @@
       renderMetricsToSidebar(
         sum.total_net_added_cr || 0, sum.total_gross_cr || 0, sum.total_redemptions_cr || 0,
         sum.total_sip_cr || 0, sum.total_stp_cr || 0, sum.total_sip_count || 0, sum.avg_sip_ticket_inr || 0,
-        sum.total_aum_cr || 0, sum.active_mfds || 0, schemes
+        sum.total_aum_cr || 0, sum.active_mfds || 0, schemes, trends, rotation
       );
     }
 
-    function renderSidebarDistrict(sum, schemes) {
+    function renderSidebarDistrict(sum, schemes, trends, rotation) {
       document.getElementById('sideTierTag').innerText = "District Market Tier";
       document.getElementById('sideTitle').innerText = sum.district;
       document.getElementById('sideSubtitle').innerText = `District in ${sum.state} (${sum.pincodes_count || 0} PINs)`;
@@ -464,11 +471,11 @@
       renderMetricsToSidebar(
         sum.total_net_added_cr || 0, sum.total_gross_cr || 0, sum.total_redemptions_cr || 0,
         sum.total_sip_cr || 0, sum.total_stp_cr || 0, sum.total_sip_count || 0, sum.avg_sip_ticket_inr || 0,
-        sum.total_aum_cr || 0, sum.total_mfds_footprint || 0, schemes
+        sum.total_aum_cr || 0, sum.total_mfds_footprint || 0, schemes, trends, rotation
       );
     }
 
-    function renderSidebarPincode(sum, schemes) {
+    function renderSidebarPincode(sum, schemes, trends, rotation) {
       document.getElementById('sideTierTag').innerText = "Micro-Market Pincode";
       document.getElementById('sideTitle').innerText = `PIN ${sum.pincode}`;
       document.getElementById('sideSubtitle').innerText = `${sum.city || 'City'}, ${sum.state} (${sum.district || 'District'})`;
@@ -476,13 +483,21 @@
       renderMetricsToSidebar(
         sum.total_net_added_cr || 0, sum.total_gross_cr || 0, sum.total_redemptions_cr || 0,
         sum.total_sip_cr || 0, sum.total_stp_cr || 0, sum.total_sip_count || 0, sum.avg_sip_ticket_inr || 0,
-        sum.total_aum_cr || 0, sum.active_mfds || 0, schemes
+        sum.total_aum_cr || 0, sum.active_mfds || 0, schemes, trends, rotation
       );
     }
 
-    function renderMetricsToSidebar(net, gross, outflow, sip, stp, sipCount, avgTicket, aum, mfds, schemes) {
-      // Hero Card
+    function renderMetricsToSidebar(net, gross, outflow, sip, stp, sipCount, avgTicket, aum, mfds, schemes, trends, rotation) {
+      currentTrends = trends || [];
+      currentSchemeRotation = rotation || [];
+      currentSchemes = schemes || [];
+
+      // Update pill active states in Horizon Stepper
+      updateHorizonPillUI();
+
+      // Hero Card Net Added
       const netSign = net >= 0 ? '+' : '';
+      document.getElementById('heroLabel').innerText = "Net New Business Retained";
       document.getElementById('sideNet').innerText = `${netSign}₹${net.toFixed(2)} Cr`;
       document.getElementById('sideNet').style.color = net >= 0 ? '#166534' : '#b91c1c';
       document.getElementById('sideGross').innerText = `Gross: ₹${gross.toFixed(2)} Cr`;
@@ -491,12 +506,11 @@
       const retPct = gross > 0 ? ((net / gross) * 100.0) : 0;
       document.getElementById('sideRetention').innerText = `Retention: ${retPct.toFixed(1)}%`;
 
-      // Inflow Sourcing Breakdown (Lumpsum | SIP | STP)
-      const lumpsum = Math.max(0, gross - sip - (stp || 0));
-      const breakdownEl = document.getElementById('sideInflowBreakdown');
-      if (breakdownEl) {
-        breakdownEl.innerHTML = `<span>Inflows: <b>Lump: ₹${lumpsum.toFixed(2)} Cr</b> | <b>SIP: ₹${sip.toFixed(2)} Cr</b> | <b>STP: ₹${(stp || 0).toFixed(2)} Cr</b></span>`;
-      }
+      // Render 3-Month Sparkbars in Hero Card
+      renderHeroSparkbars(currentTrends);
+
+      // Render 3-Month Sourcing Evolution (Lump vs SIP vs STP)
+      renderSourcingEvolution(currentTrends);
 
       // 4 Tiles
       document.getElementById('sideSip').innerText = `₹${sip.toFixed(2)} Cr`;
@@ -505,44 +519,199 @@
       document.getElementById('sideAum').innerText = aum > 10000 ? `₹${(aum/1000).toFixed(1)}k Cr` : `₹${Math.round(aum).toLocaleString()} Cr`;
       document.getElementById('sideMfds').innerText = `${(mfds || 0).toLocaleString()} MFDs`;
 
+      // Render 4-Tile Trends & Deltas
+      renderTileTrends(currentTrends);
+
       // Asset Class Mix Calculation
-      currentSchemes = schemes || [];
       calculateAndRenderAssetMix(currentSchemes);
-      renderSchemes();
+
+      // Render Schemes or Product Rotation depending on active tab
+      if (currentSchemeTab === 'rotation') {
+        renderSchemeRotation();
+      } else {
+        renderSchemes();
+      }
     }
 
-    function calculateAndRenderAssetMix(schemes) {
-      let eq = 0, hy = 0, db = 0, lq = 0, pa = 0, tot = 0;
-      schemes.forEach(s => {
-        let v = 0;
-        if (currentSchemeTab === 'gross') v = s.gross_inflows_cr || 0;
-        else if (currentSchemeTab === 'sip') v = s.active_sip_cr || 0;
-        else v = s.closing_aum_cr || 0;
+    function renderHeroSparkbars(trends) {
+      const cont = document.getElementById('heroSparkBars');
+      const deltaEl = document.getElementById('sideTrendDelta');
+      const retProgEl = document.getElementById('retentionProgression');
+      if (!cont || !trends || trends.length === 0) return;
 
-        tot += v;
-        const ac = (s.asset_class || '').toUpperCase();
-        if (ac.includes('EQUITY')) eq += v;
-        else if (ac.includes('HYBRID')) hy += v;
-        else if (ac.includes('DEBT')) db += v;
-        else if (ac.includes('LIQUID')) lq += v;
-        else if (ac.includes('PASSIVE')) pa += v;
+      let maxAbs = 1;
+      trends.forEach(t => {
+        const val = Math.abs(t.net_cr || 0);
+        if (val > maxAbs) maxAbs = val;
       });
 
-      if (tot > 0) {
-        const eqP = Math.round((eq / tot) * 100);
-        const hyP = Math.round((hy / tot) * 100);
-        const paP = Math.round((pa / tot) * 100);
-        const dbP = Math.round((db / tot) * 100);
-        const lqP = Math.max(0, 100 - eqP - hyP - paP - dbP);
-
-        document.getElementById('barEq').style.width = `${eqP}%`;
-        document.getElementById('barHy').style.width = `${hyP}%`;
-        document.getElementById('barPa').style.width = `${paP}%`;
-        document.getElementById('barDb').style.width = `${dbP}%`;
-        document.getElementById('barLq').style.width = `${lqP}%`;
-
-        document.getElementById('mixDetail').innerText = `Eq: ${eqP}% | Hy: ${hyP}% | Pa: ${paP}% | Db: ${dbP}% | Lq: ${lqP}%`;
+      // Calculate MoM trajectory for delta pill
+      if (trends.length >= 2) {
+        const prev = trends[trends.length - 2].net_cr || 0;
+        const curr = trends[trends.length - 1].net_cr || 0;
+        if (prev !== 0) {
+          const momPct = ((curr - prev) / Math.abs(prev)) * 100;
+          const sign = momPct >= 0 ? '+' : '';
+          if (momPct < -50) {
+            deltaEl.className = 'trend-delta-pill trend-pill-neg';
+            deltaEl.innerText = `▼ ${sign}${momPct.toFixed(1)}% MoM Tax Dip`;
+          } else if (momPct >= 0) {
+            deltaEl.className = 'trend-delta-pill trend-pill-pos';
+            deltaEl.innerText = `▲ ${sign}${momPct.toFixed(1)}% MoM Growth`;
+          } else {
+            deltaEl.className = 'trend-delta-pill trend-pill-neg';
+            deltaEl.innerText = `▼ ${sign}${momPct.toFixed(1)}% MoM`;
+          }
+        }
       }
+
+      // Retention progression
+      if (retProgEl) {
+        retProgEl.innerHTML = trends.map(t => `${t.month.split('-')[0]}: <b>${(t.retention_pct || 0).toFixed(1)}%</b>`).join(' ➔ ');
+      }
+
+      cont.innerHTML = trends.map(t => {
+        const net = t.net_cr || 0;
+        const isPos = net >= 0;
+        const barHeight = Math.max(4, Math.round((Math.abs(net) / maxAbs) * 26));
+        const isActive = (t.month === currentMonth && currentHorizon !== 'Q1');
+        const valStr = Math.abs(net) >= 1000 ? `${(net/1000).toFixed(1)}k` : `${Math.round(net)}`;
+
+        return `
+          <div class="sparkbar-col ${isActive ? 'active-col' : ''}" onclick="switchHorizon('${t.month}')" title="${t.month}: Net ${isPos?'+':''}₹${net.toFixed(2)} Cr">
+            <span class="sparkbar-val" style="color:${isPos ? '#15803d' : '#b91c1c'};">${isPos?'+':''}${valStr}</span>
+            <div class="sparkbar-bar ${isPos ? 'pos' : 'neg'}" style="height:${barHeight}px;"></div>
+            <span class="sparkbar-lbl">${t.month.split('-')[0]}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderSourcingEvolution(trends) {
+      const cont = document.getElementById('sourcingTimeline');
+      if (!cont || !trends || trends.length === 0) return;
+
+      const formatCr = (v) => v >= 1000 ? `${(v/1000).toFixed(1)}k` : Math.round(v);
+
+      cont.innerHTML = trends.map(t => {
+        const lump = t.lumpsum_cr || 0;
+        const sip = t.sip_cr || 0;
+        const stp = t.stp_cr || 0;
+        const tot = Math.max(1, lump + sip + stp);
+        const lumpP = Math.round((lump / tot) * 100);
+        const sipP = Math.round((sip / tot) * 100);
+        const stpP = Math.max(0, 100 - lumpP - sipP);
+        const isActive = (t.month === currentMonth && currentHorizon !== 'Q1');
+
+        return `
+          <div class="s-row ${isActive ? 'active-month' : ''}" onclick="switchHorizon('${t.month}')" style="cursor:pointer;" title="Click to inspect ${t.month}">
+            <span class="s-row-lbl">${t.month}</span>
+            <div class="s-row-bar-wrap">
+              <div class="s-seg-lump" style="width:${lumpP}%;"></div>
+              <div class="s-seg-sip" style="width:${sipP}%;"></div>
+              <div class="s-seg-stp" style="width:${stpP}%;"></div>
+            </div>
+            <span class="s-row-vals">L: ₹${formatCr(lump)} | S: ₹${formatCr(sip)} | T: ₹${formatCr(stp)}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderTileTrends(trends) {
+      if (!trends || trends.length === 0) return;
+      const formatCr = v => v >= 1000 ? `${(v/1000).toFixed(1)}k` : Math.round(v);
+      const formatAum = v => v >= 100000 ? `${(v/100000).toFixed(2)}L` : (v >= 1000 ? `${(v/1000).toFixed(1)}k` : Math.round(v));
+
+      // SIP Tile
+      const sipEl = document.getElementById('sideSipTrend');
+      const sipDelta = document.getElementById('sideSipDelta');
+      if (trends.length >= 2) {
+        const aprSip = trends[0].sip_cr || 0;
+        const junSip = trends[trends.length - 1].sip_cr || 0;
+        const dPct = aprSip > 0 ? ((junSip - aprSip) / aprSip) * 100 : 0;
+        if (sipDelta) sipDelta.innerText = `${dPct >= 0 ? '+' : ''}${dPct.toFixed(1)}%`;
+        if (sipEl) {
+          sipEl.innerText = trends.map(t => `${t.month.split('-')[0]}: ₹${formatCr(t.sip_cr)}`).join(' ➔ ');
+        }
+      }
+
+      // AUM Tile
+      const aumEl = document.getElementById('sideAumTrend');
+      const aumDelta = document.getElementById('sideAumDelta');
+      if (trends.length >= 2) {
+        const aprAum = trends[0].aum_cr || 0;
+        const junAum = trends[trends.length - 1].aum_cr || 0;
+        const aPct = aprAum > 0 ? ((junAum - aprAum) / aprAum) * 100 : 0;
+        if (aumDelta) aumDelta.innerText = `${aPct >= 0 ? '+' : ''}${aPct.toFixed(1)}%`;
+        if (aumEl) {
+          aumEl.innerText = trends.map(t => `${t.month.split('-')[0]}: ₹${formatAum(t.aum_cr)}`).join(' ➔ ');
+        }
+      }
+
+      // Avg Ticket
+      const ticketEl = document.getElementById('sideTicketTrend');
+      if (ticketEl) ticketEl.innerText = `Stable across Q1`;
+
+      // MFD Footprint
+      const mfdsEl = document.getElementById('sideMfdsTrend');
+      if (mfdsEl) mfdsEl.innerText = `Verified distribution`;
+    }
+
+    function switchHorizon(horizon) {
+      if (horizon === 'Q1') {
+        currentHorizon = 'Q1';
+        updateHorizonPillUI();
+        renderQ1AggregateView();
+      } else {
+        currentHorizon = horizon;
+        currentMonth = horizon;
+        const monthSel = document.getElementById('monthSelect');
+        if (monthSel) monthSel.value = horizon;
+        updateHorizonPillUI();
+        loadMonthData();
+      }
+    }
+
+    function updateHorizonPillUI() {
+      const pApr = document.getElementById('pillApr');
+      const pMay = document.getElementById('pillMay');
+      const pJun = document.getElementById('pillJun');
+      const pQ1 = document.getElementById('pillQ1');
+
+      if (pApr) pApr.className = 'h-pill ' + (currentHorizon === 'Apr-26' ? 'active' : '');
+      if (pMay) pMay.className = 'h-pill ' + (currentHorizon === 'May-26' ? 'active' : '');
+      if (pJun) pJun.className = 'h-pill ' + (currentHorizon === 'Jun-26' ? 'active' : '');
+      if (pQ1) pQ1.className = 'h-pill q1-tag ' + (currentHorizon === 'Q1' ? 'active' : '');
+    }
+
+    function renderQ1AggregateView() {
+      if (!currentTrends || currentTrends.length === 0) return;
+
+      let totNet = 0, totGross = 0, totOutflow = 0;
+      currentTrends.forEach(t => {
+        totNet += (t.net_cr || 0);
+        totGross += (t.gross_cr || 0);
+        totOutflow += (t.outflow_cr || 0);
+      });
+
+      const netSign = totNet >= 0 ? '+' : '';
+      document.getElementById('heroLabel').innerText = "Total Q1 Capital Retained (Apr - Jun 2026)";
+      document.getElementById('sideNet').innerText = `${netSign}₹${totNet.toFixed(2)} Cr`;
+      document.getElementById('sideNet').style.color = totNet >= 0 ? '#166534' : '#b91c1c';
+      document.getElementById('sideGross').innerText = `Total Gross: ₹${totGross.toFixed(2)} Cr`;
+      document.getElementById('sideOutflow').innerText = `Total Outflow: ₹${totOutflow.toFixed(2)} Cr`;
+
+      const q1RetPct = totGross > 0 ? ((totNet / totGross) * 100.0) : 0;
+      document.getElementById('sideRetention').innerText = `Q1 Retention: ${q1RetPct.toFixed(1)}%`;
+
+      const deltaEl = document.getElementById('sideTrendDelta');
+      if (deltaEl) {
+        deltaEl.className = 'trend-delta-pill trend-pill-pos';
+        deltaEl.innerText = 'Q1 Combined Universe';
+      }
+
+      // Switch to rotation tab automatically
+      setSchemeTab('rotation');
     }
 
     function setSchemeTab(tab) {
@@ -550,8 +719,74 @@
       document.getElementById('tabGross').className = 't-btn ' + (tab === 'gross' ? 'active' : '');
       document.getElementById('tabSip').className = 't-btn ' + (tab === 'sip' ? 'active' : '');
       document.getElementById('tabAum').className = 't-btn ' + (tab === 'aum' ? 'active' : '');
-      calculateAndRenderAssetMix(currentSchemes);
-      renderSchemes();
+      document.getElementById('tabRotation').className = 't-btn highlight-tab ' + (tab === 'rotation' ? 'active' : '');
+
+      const sub = document.getElementById('schemeSubtitle');
+      if (tab === 'rotation') {
+        if (sub) sub.innerText = 'Category Rotation & Trajectory (Q1 FY27)';
+        renderSchemeRotation();
+      } else {
+        if (sub) sub.innerText = tab === 'gross' ? 'Top Scheme Inflows' : (tab === 'sip' ? 'Top SIP Books' : 'Closing AUM Leaders');
+        calculateAndRenderAssetMix(currentSchemes);
+        renderSchemes();
+      }
+    }
+
+    function renderSchemeRotation() {
+      const cont = document.getElementById('schemeContainer');
+      if (!cont) return;
+
+      if (!currentSchemeRotation || currentSchemeRotation.length === 0) {
+        cont.innerHTML = `<div style="color:#94a3b8; font-size:12px; padding:12px; text-align:center;">No rotation data available for this selection.</div>`;
+        return;
+      }
+
+      const formatVal = (v) => {
+        if (Math.abs(v) >= 1000) return `₹${(v / 1000).toFixed(1)}k Cr`;
+        return `₹${v.toFixed(1)} Cr`;
+      };
+
+      cont.innerHTML = currentSchemeRotation.slice(0, 15).map((s, idx) => {
+        const apr = s.apr || {};
+        const may = s.may || {};
+        const jun = s.jun || {};
+
+        const momTag = s.momentum || 'Steady Flow';
+        const momClass = s.momentum_class || 'neutral';
+
+        const netAprSign = (apr.net || 0) >= 0 ? '+' : '';
+        const netMaySign = (may.net || 0) >= 0 ? '+' : '';
+        const netJunSign = (jun.net || 0) >= 0 ? '+' : '';
+
+        return `
+          <div class="rotation-card">
+            <div class="rot-head">
+              <div>
+                <div class="rot-title">${idx + 1}. ${s.scheme_type}</div>
+                <div class="rot-cat">${s.asset_class}</div>
+              </div>
+              <span class="rot-momentum ${momClass}">${momTag}</span>
+            </div>
+            <div class="rot-metrics">
+              <div class="rot-col">
+                <div class="rot-col-m">Apr-26</div>
+                <div class="rot-col-g">${formatVal(apr.gross || 0)}</div>
+                <div class="rot-col-n ${(apr.net || 0) >= 0 ? 'pos' : 'neg'}">Net: ${netAprSign}${formatVal(apr.net || 0)}</div>
+              </div>
+              <div class="rot-col" style="border-left:1px dashed #e2e8f0; border-right:1px dashed #e2e8f0;">
+                <div class="rot-col-m">May-26</div>
+                <div class="rot-col-g">${formatVal(may.gross || 0)}</div>
+                <div class="rot-col-n ${(may.net || 0) >= 0 ? 'pos' : 'neg'}">Net: ${netMaySign}${formatVal(may.net || 0)}</div>
+              </div>
+              <div class="rot-col">
+                <div class="rot-col-m">Jun-26</div>
+                <div class="rot-col-g">${formatVal(jun.gross || 0)}</div>
+                <div class="rot-col-n ${(jun.net || 0) >= 0 ? 'pos' : 'neg'}">Net: ${netJunSign}${formatVal(jun.net || 0)}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     function renderSchemes() {
@@ -638,7 +873,7 @@
             renderStatePolygons();
             renderDistrictPolygons();
             await renderHeatAndPins();
-            renderSidebarPincode(data.summary, data.schemes);
+            renderSidebarPincode(data.summary, data.schemes, data.monthly_trends, data.scheme_rotation);
           } else {
             alert(`PIN ${pin} not found in verified database for ${currentMonth}.`);
           }

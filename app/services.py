@@ -32,6 +32,229 @@ def get_available_months() -> Dict[str, Any]:
             "default": "Jun-26" if "Jun-26" in months else (months[0] if months else "")
         }
 
+# In-memory Trends and Schemes Cache
+_trends_cache: Dict[str, Any] = {}
+
+def get_trailing_3m_summary(level: str, state: Optional[str] = None, district: Optional[str] = None, pincode: Optional[str] = None) -> List[Dict[str, Any]]:
+    cache_key = f"summary_{level}_{state}_{district}_{pincode}"
+    if cache_key in _trends_cache:
+        return _trends_cache[cache_key]
+
+    with get_db_connection() as conn:
+        cur = conn.cursor()
+        if level == 'national':
+            cur.execute("""
+                SELECT 
+                    month,
+                    ROUND(SUM(total_aum_cr), 2) as aum_cr,
+                    ROUND(SUM(total_gross_cr), 2) as gross_cr,
+                    ROUND(SUM(total_redemptions_cr), 2) as outflow_cr,
+                    ROUND(SUM(total_net_added_cr), 2) as net_cr,
+                    ROUND(SUM(total_sip_cr), 2) as sip_cr,
+                    ROUND(SUM(total_stp_cr), 2) as stp_cr,
+                    SUM(total_sip_count) as sip_count,
+                    ROUND(CASE WHEN SUM(total_sip_count) > 0 THEN SUM(total_sip_cr)*10000000.0 / SUM(total_sip_count) ELSE 0 END, 2) as avg_sip_ticket_inr,
+                    SUM(active_mfds) as active_mfds,
+                    ROUND(CASE WHEN SUM(total_gross_cr) > 0 THEN (SUM(total_net_added_cr) / SUM(total_gross_cr))*100.0 ELSE 0 END, 2) as retention_pct
+                FROM pincode_monthly_summary
+                WHERE month IN ('Apr-26', 'May-26', 'Jun-26')
+                GROUP BY month
+                ORDER BY CASE month WHEN 'Apr-26' THEN 1 WHEN 'May-26' THEN 2 WHEN 'Jun-26' THEN 3 END
+            """)
+        elif level == 'state':
+            cur.execute("""
+                SELECT 
+                    month,
+                    ROUND(SUM(total_aum_cr), 2) as aum_cr,
+                    ROUND(SUM(total_gross_cr), 2) as gross_cr,
+                    ROUND(SUM(total_redemptions_cr), 2) as outflow_cr,
+                    ROUND(SUM(total_net_added_cr), 2) as net_cr,
+                    ROUND(SUM(total_sip_cr), 2) as sip_cr,
+                    ROUND(SUM(total_stp_cr), 2) as stp_cr,
+                    SUM(total_sip_count) as sip_count,
+                    ROUND(CASE WHEN SUM(total_sip_count) > 0 THEN SUM(total_sip_cr)*10000000.0 / SUM(total_sip_count) ELSE 0 END, 2) as avg_sip_ticket_inr,
+                    SUM(active_mfds) as active_mfds,
+                    ROUND(CASE WHEN SUM(total_gross_cr) > 0 THEN (SUM(total_net_added_cr) / SUM(total_gross_cr))*100.0 ELSE 0 END, 2) as retention_pct
+                FROM pincode_monthly_summary
+                WHERE month IN ('Apr-26', 'May-26', 'Jun-26') AND state = ?
+                GROUP BY month
+                ORDER BY CASE month WHEN 'Apr-26' THEN 1 WHEN 'May-26' THEN 2 WHEN 'Jun-26' THEN 3 END
+            """, (state,))
+        elif level == 'district':
+            query = """
+                SELECT 
+                    month,
+                    ROUND(total_aum_cr, 2) as aum_cr,
+                    ROUND(total_gross_cr, 2) as gross_cr,
+                    ROUND(total_redemptions_cr, 2) as outflow_cr,
+                    ROUND(total_net_added_cr, 2) as net_cr,
+                    ROUND(total_sip_cr, 2) as sip_cr,
+                    ROUND(total_stp_cr, 2) as stp_cr,
+                    total_sip_count as sip_count,
+                    avg_sip_ticket_inr,
+                    total_mfds_footprint as active_mfds,
+                    retention_pct
+                FROM district_monthly_summary
+                WHERE month IN ('Apr-26', 'May-26', 'Jun-26') AND district = ?
+            """
+            args = [district]
+            if state:
+                query += " AND state = ?"
+                args.append(state)
+            query += " ORDER BY CASE month WHEN 'Apr-26' THEN 1 WHEN 'May-26' THEN 2 WHEN 'Jun-26' THEN 3 END"
+            cur.execute(query, tuple(args))
+        elif level == 'pincode':
+            cur.execute("""
+                SELECT 
+                    month,
+                    ROUND(total_aum_cr, 2) as aum_cr,
+                    ROUND(total_gross_cr, 2) as gross_cr,
+                    ROUND(total_redemptions_cr, 2) as outflow_cr,
+                    ROUND(total_net_added_cr, 2) as net_cr,
+                    ROUND(total_sip_cr, 2) as sip_cr,
+                    ROUND(total_stp_cr, 2) as stp_cr,
+                    total_sip_count as sip_count,
+                    avg_sip_ticket_inr,
+                    active_mfds,
+                    retention_pct
+                FROM pincode_monthly_summary
+                WHERE month IN ('Apr-26', 'May-26', 'Jun-26') AND pincode = ?
+                ORDER BY CASE month WHEN 'Apr-26' THEN 1 WHEN 'May-26' THEN 2 WHEN 'Jun-26' THEN 3 END
+            """, (pincode,))
+
+        rows = cur.fetchall()
+        result = []
+        for r in rows:
+            d = dict(r)
+            gross = d.get('gross_cr') or 0
+            sip = d.get('sip_cr') or 0
+            stp = d.get('stp_cr') or 0
+            d['lumpsum_cr'] = round(max(0.0, gross - sip - stp), 2)
+            result.append(d)
+
+        _trends_cache[cache_key] = result
+        return result
+
+def get_scheme_rotation_3m(level: str, state: Optional[str] = None, district: Optional[str] = None, pincode: Optional[str] = None) -> List[Dict[str, Any]]:
+    cache_key = f"schemes_{level}_{state}_{district}_{pincode}"
+    if cache_key in _trends_cache:
+        return _trends_cache[cache_key]
+
+    with get_db_connection() as conn:
+        cur = conn.cursor()
+        if level == 'national':
+            cur.execute("""
+                SELECT 
+                    scheme_type, asset_class, month,
+                    ROUND(SUM(gross_inflows_cr), 2) as gross,
+                    ROUND(SUM(redemptions_cr), 2) as outflow,
+                    ROUND(SUM(net_added_cr), 2) as net,
+                    ROUND(SUM(active_sip_cr), 2) as sip,
+                    ROUND(SUM(closing_aum_cr), 2) as aum
+                FROM pincode_scheme_monthly
+                WHERE month IN ('Apr-26', 'May-26', 'Jun-26')
+                GROUP BY scheme_type, asset_class, month
+            """)
+        elif level == 'state':
+            cur.execute("""
+                SELECT 
+                    scheme_type, asset_class, month,
+                    ROUND(SUM(gross_inflows_cr), 2) as gross,
+                    ROUND(SUM(redemptions_cr), 2) as outflow,
+                    ROUND(SUM(net_added_cr), 2) as net,
+                    ROUND(SUM(active_sip_cr), 2) as sip,
+                    ROUND(SUM(closing_aum_cr), 2) as aum
+                FROM pincode_scheme_monthly
+                WHERE month IN ('Apr-26', 'May-26', 'Jun-26') AND state = ?
+                GROUP BY scheme_type, asset_class, month
+            """, (state,))
+        elif level == 'district':
+            query = """
+                SELECT 
+                    scheme_type, asset_class, month,
+                    ROUND(SUM(gross_inflows_cr), 2) as gross,
+                    ROUND(SUM(redemptions_cr), 2) as outflow,
+                    ROUND(SUM(net_added_cr), 2) as net,
+                    ROUND(SUM(active_sip_cr), 2) as sip,
+                    ROUND(SUM(closing_aum_cr), 2) as aum
+                FROM pincode_scheme_monthly
+                WHERE month IN ('Apr-26', 'May-26', 'Jun-26') AND district = ?
+            """
+            args = [district]
+            if state:
+                query += " AND state = ?"
+                args.append(state)
+            query += " GROUP BY scheme_type, asset_class, month"
+            cur.execute(query, tuple(args))
+        elif level == 'pincode':
+            cur.execute("""
+                SELECT 
+                    scheme_type, asset_class, month,
+                    ROUND(gross_inflows_cr, 2) as gross,
+                    ROUND(redemptions_cr, 2) as outflow,
+                    ROUND(net_added_cr, 2) as net,
+                    ROUND(active_sip_cr, 2) as sip,
+                    ROUND(closing_aum_cr, 2) as aum
+                FROM pincode_scheme_monthly
+                WHERE month IN ('Apr-26', 'May-26', 'Jun-26') AND pincode = ?
+            """, (pincode,))
+
+        rows = cur.fetchall()
+        by_scheme: Dict[str, Dict[str, Any]] = {}
+        for r in rows:
+            st = r['scheme_type']
+            if st not in by_scheme:
+                by_scheme[st] = {
+                    'scheme_type': st,
+                    'asset_class': r['asset_class'] or 'Other',
+                    'apr': {'gross': 0, 'net': 0, 'sip': 0, 'aum': 0},
+                    'may': {'gross': 0, 'net': 0, 'sip': 0, 'aum': 0},
+                    'jun': {'gross': 0, 'net': 0, 'sip': 0, 'aum': 0},
+                    'total_gross': 0,
+                    'total_net': 0,
+                    'total_sip': 0
+                }
+            m_key = 'apr' if r['month'] == 'Apr-26' else ('may' if r['month'] == 'May-26' else 'jun')
+            by_scheme[st][m_key] = {
+                'gross': r['gross'] or 0,
+                'net': r['net'] or 0,
+                'sip': r['sip'] or 0,
+                'aum': r['aum'] or 0
+            }
+            by_scheme[st]['total_gross'] += (r['gross'] or 0)
+            by_scheme[st]['total_net'] += (r['net'] or 0)
+            by_scheme[st]['total_sip'] += (r['sip'] or 0)
+
+        sorted_schemes = sorted(by_scheme.values(), key=lambda s: s['jun']['gross'], reverse=True)
+
+        for s in sorted_schemes:
+            apr_n = s['apr']['net']
+            jun_n = s['jun']['net']
+            apr_g = s['apr']['gross']
+            jun_g = s['jun']['gross']
+            sip_g = s['jun']['sip'] - s['apr']['sip']
+            ac = (s['asset_class'] or '').upper()
+
+            if jun_n < 0 and apr_n > 50:
+                s['momentum'] = 'Tax Drain'
+                s['momentum_class'] = 'drain'
+            elif (sip_g > 1.0 or (s['jun']['sip'] > 10 and jun_n > 0)) and 'EQUITY' in ac:
+                s['momentum'] = 'Sticky SIP'
+                s['momentum_class'] = 'sticky'
+            elif 'HYBRID' in ac and jun_n > 0:
+                s['momentum'] = 'Defensive'
+                s['momentum_class'] = 'defensive'
+            elif jun_g > apr_g * 1.1:
+                s['momentum'] = 'Surging'
+                s['momentum_class'] = 'surging'
+            else:
+                s['momentum'] = 'Steady Flow'
+                s['momentum_class'] = 'neutral'
+
+        top_schemes = sorted_schemes[:25]
+        _trends_cache[cache_key] = top_schemes
+        return top_schemes
+
 def get_national_summary(month: str) -> Dict[str, Any]:
     with get_db_connection() as conn:
         cur = conn.cursor()
@@ -74,7 +297,9 @@ def get_national_summary(month: str) -> Dict[str, Any]:
         return {
             "month": month,
             "summary": dict(row) if row else {},
-            "schemes": schemes
+            "schemes": schemes,
+            "monthly_trends": get_trailing_3m_summary('national'),
+            "scheme_rotation": get_scheme_rotation_3m('national')
         }
 
 def get_state_summaries(month: str) -> Dict[str, Any]:
@@ -146,7 +371,9 @@ def get_state_details(month: str, state: str) -> Dict[str, Any]:
             "month": month,
             "state": state,
             "summary": dict(sum_row) if sum_row else {},
-            "schemes": schemes
+            "schemes": schemes,
+            "monthly_trends": get_trailing_3m_summary('state', state=state),
+            "scheme_rotation": get_scheme_rotation_3m('state', state=state)
         }
 
 def get_district_details(month: str, district: str, state: Optional[str] = None) -> Dict[str, Any]:
@@ -186,7 +413,9 @@ def get_district_details(month: str, district: str, state: Optional[str] = None)
             "district": district,
             "state": state or "",
             "summary": dict(dist_row) if dist_row else {},
-            "schemes": schemes
+            "schemes": schemes,
+            "monthly_trends": get_trailing_3m_summary('district', state=state, district=district),
+            "scheme_rotation": get_scheme_rotation_3m('district', state=state, district=district)
         }
 
 def get_map_summary(month: str, state: Optional[str] = None, district: Optional[str] = None) -> Dict[str, Any]:
@@ -232,7 +461,7 @@ def get_pincode_details(month: str, pincode: str) -> Dict[str, Any]:
         cur.execute("""
             SELECT 
                 scheme_type, asset_class, closing_aum_cr, gross_inflows_cr,
-                redemptions_cr, net_added_cr, active_sip_cr, active_sip_count,
+                redemptions_cr, net_added_cr, active_sip_cr, active_stp_cr, active_sip_count,
                 avg_sip_ticket_inr, active_mfds, retention_pct
             FROM pincode_scheme_monthly
             WHERE month = ? AND pincode = ?
@@ -243,7 +472,7 @@ def get_pincode_details(month: str, pincode: str) -> Dict[str, Any]:
         cur.execute("""
             SELECT 
                 month, total_aum_cr, total_gross_cr, total_redemptions_cr,
-                total_net_added_cr, total_sip_cr, total_sip_count, active_mfds
+                total_net_added_cr, total_sip_cr, total_stp_cr, total_sip_count, active_mfds
             FROM pincode_monthly_summary
             WHERE pincode = ?
             ORDER BY rowid ASC
@@ -255,5 +484,7 @@ def get_pincode_details(month: str, pincode: str) -> Dict[str, Any]:
             "pincode": pincode,
             "summary": summary,
             "schemes": schemes,
-            "trend": trend
+            "trend": trend,
+            "monthly_trends": get_trailing_3m_summary('pincode', pincode=pincode),
+            "scheme_rotation": get_scheme_rotation_3m('pincode', pincode=pincode)
         }
