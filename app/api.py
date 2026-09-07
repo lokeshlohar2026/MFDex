@@ -1,4 +1,4 @@
-﻿import http.server
+import http.server
 import json
 import os
 import urllib.parse
@@ -11,6 +11,7 @@ from app.services import (
     get_district_details,
     get_map_summary,
     get_pincode_details,
+    get_multi_period_analytics,
     get_states_geojson,
     get_districts_geojson,
 )
@@ -74,7 +75,17 @@ class MarketRadarHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json_response(get_pincode_details(month, pincode))
             return
 
-        # 8. API: Static GeoJSON
+        # 8. API: Multi-Period Trajectory Cockpit (3M, 6M, 1Y)
+        if path == "/api/multi_period_analytics":
+            horizon = params.get("horizon", ["3M"])[0]
+            level = params.get("level", ["national"])[0]
+            state = params.get("state", [""])[0]
+            district = params.get("district", [""])[0]
+            pincode = params.get("pincode", [""])[0]
+            self.send_json_response(get_multi_period_analytics(horizon, level, state, district, pincode))
+            return
+
+        # 9. API: Static GeoJSON
         if path == "/api/geojson/states":
             self.send_bytes_response(get_states_geojson(), "application/json")
             return

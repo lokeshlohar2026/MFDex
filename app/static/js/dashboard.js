@@ -80,8 +80,6 @@
           const sel = document.getElementById('monthSelect');
           sel.innerHTML = mData.months.map(m => `<option value="${m}" ${m===mData.default?'selected':''}>${m}</option>`).join('');
           currentMonth = mData.default;
-          currentHorizon = currentMonth;
-          updateHorizonPillUI();
         }
 
         // 2. Fetch GeoJSONs
@@ -108,8 +106,6 @@
 
     async function onMonthChange() {
       currentMonth = document.getElementById('monthSelect').value;
-      currentHorizon = currentMonth;
-      updateHorizonPillUI();
       await loadMonthData();
     }
 
@@ -138,7 +134,7 @@
         } else if (selectedState) {
           await loadStateDetails(selectedState);
         } else {
-          renderSidebarNational(natData.summary, natData.schemes, natData.monthly_trends, natData.scheme_rotation);
+          renderSidebarNational(natData.summary, natData.schemes);
         }
       } catch (e) {
         console.error("Error loading month data:", e);
@@ -400,7 +396,7 @@
         const res = await fetch(`/api/pincode_details?month=${currentMonth}&pincode=${pin}`);
         const data = await res.json();
         if (data.summary) {
-          renderSidebarPincode(data.summary, data.schemes, data.monthly_trends, data.scheme_rotation);
+          renderSidebarPincode(data.summary, data.schemes);
         }
       } catch (e) {
         console.error("Error loading pin details:", e);
@@ -415,7 +411,7 @@
         const res = await fetch(`/api/district_details?month=${currentMonth}&district=${encodeURIComponent(district)}&state=${encodeURIComponent(state)}`);
         const data = await res.json();
         if (data.summary) {
-          renderSidebarDistrict(data.summary, data.schemes, data.monthly_trends, data.scheme_rotation);
+          renderSidebarDistrict(data.summary, data.schemes);
         }
       } catch (e) {
         console.error("Error loading district details:", e);
@@ -430,7 +426,7 @@
         const res = await fetch(`/api/state_details?month=${currentMonth}&state=${encodeURIComponent(state)}`);
         const data = await res.json();
         if (data.summary) {
-          renderSidebarState(data.summary, data.schemes, data.monthly_trends, data.scheme_rotation);
+          renderSidebarState(data.summary, data.schemes);
         }
       } catch (e) {
         console.error("Error loading state details:", e);
@@ -439,7 +435,7 @@
       }
     }
 
-    function renderSidebarNational(sum, schemes, trends, rotation) {
+    function renderSidebarNational(sum, schemes) {
       document.getElementById('sideTierTag').innerText = "National Universe";
       document.getElementById('sideTitle').innerText = "All India Front";
       document.getElementById('sideSubtitle').innerText = "Verified Independent MFD & RIA Telemetry";
@@ -447,11 +443,11 @@
       renderMetricsToSidebar(
         sum.nat_net || 0, sum.nat_gross || 0, sum.nat_outflow || 0,
         sum.nat_sip || 0, sum.nat_stp || 0, sum.nat_sip_cnt || 0, sum.avg_sip_ticket || 0,
-        sum.nat_aum || 0, sum.nat_mfds_footprint || 0, schemes, trends, rotation
+        sum.nat_aum || 0, sum.nat_mfds_footprint || 0, schemes
       );
     }
 
-    function renderSidebarState(sum, schemes, trends, rotation) {
+    function renderSidebarState(sum, schemes) {
       document.getElementById('sideTierTag').innerText = "State Regional Tier";
       document.getElementById('sideTitle').innerText = sum.state;
       document.getElementById('sideSubtitle').innerText = `${(sum.pincodes_count || 0).toLocaleString()} Active Postal Pincodes`;
@@ -459,11 +455,11 @@
       renderMetricsToSidebar(
         sum.total_net_added_cr || 0, sum.total_gross_cr || 0, sum.total_redemptions_cr || 0,
         sum.total_sip_cr || 0, sum.total_stp_cr || 0, sum.total_sip_count || 0, sum.avg_sip_ticket_inr || 0,
-        sum.total_aum_cr || 0, sum.active_mfds || 0, schemes, trends, rotation
+        sum.total_aum_cr || 0, sum.active_mfds || 0, schemes
       );
     }
 
-    function renderSidebarDistrict(sum, schemes, trends, rotation) {
+    function renderSidebarDistrict(sum, schemes) {
       document.getElementById('sideTierTag').innerText = "District Market Tier";
       document.getElementById('sideTitle').innerText = sum.district;
       document.getElementById('sideSubtitle').innerText = `District in ${sum.state} (${sum.pincodes_count || 0} PINs)`;
@@ -471,11 +467,11 @@
       renderMetricsToSidebar(
         sum.total_net_added_cr || 0, sum.total_gross_cr || 0, sum.total_redemptions_cr || 0,
         sum.total_sip_cr || 0, sum.total_stp_cr || 0, sum.total_sip_count || 0, sum.avg_sip_ticket_inr || 0,
-        sum.total_aum_cr || 0, sum.total_mfds_footprint || 0, schemes, trends, rotation
+        sum.total_aum_cr || 0, sum.total_mfds_footprint || 0, schemes
       );
     }
 
-    function renderSidebarPincode(sum, schemes, trends, rotation) {
+    function renderSidebarPincode(sum, schemes) {
       document.getElementById('sideTierTag').innerText = "Micro-Market Pincode";
       document.getElementById('sideTitle').innerText = `PIN ${sum.pincode}`;
       document.getElementById('sideSubtitle').innerText = `${sum.city || 'City'}, ${sum.state} (${sum.district || 'District'})`;
@@ -483,34 +479,30 @@
       renderMetricsToSidebar(
         sum.total_net_added_cr || 0, sum.total_gross_cr || 0, sum.total_redemptions_cr || 0,
         sum.total_sip_cr || 0, sum.total_stp_cr || 0, sum.total_sip_count || 0, sum.avg_sip_ticket_inr || 0,
-        sum.total_aum_cr || 0, sum.active_mfds || 0, schemes, trends, rotation
+        sum.total_aum_cr || 0, sum.active_mfds || 0, schemes
       );
     }
 
-    function renderMetricsToSidebar(net, gross, outflow, sip, stp, sipCount, avgTicket, aum, mfds, schemes, trends, rotation) {
-      currentTrends = trends || [];
-      currentSchemeRotation = rotation || [];
+    function renderMetricsToSidebar(net, gross, outflow, sip, stp, sipCount, avgTicket, aum, mfds, schemes) {
       currentSchemes = schemes || [];
-
-      // Update pill active states in Horizon Stepper
-      updateHorizonPillUI();
 
       // Hero Card Net Added
       const netSign = net >= 0 ? '+' : '';
-      document.getElementById('heroLabel').innerText = "Net New Business Retained";
+      document.getElementById('heroLabel').innerText = "Net New Business Retained in Month";
       document.getElementById('sideNet').innerText = `${netSign}₹${net.toFixed(2)} Cr`;
       document.getElementById('sideNet').style.color = net >= 0 ? '#166534' : '#b91c1c';
-      document.getElementById('sideGross').innerText = `Gross: ₹${gross.toFixed(2)} Cr`;
-      document.getElementById('sideOutflow').innerText = `Outflow: ₹${outflow.toFixed(2)} Cr`;
+      document.getElementById('sideGross').innerText = `Gross Inflow: ₹${gross.toFixed(2)} Cr`;
+      document.getElementById('sideOutflow').innerText = `Total Outflow: ₹${outflow.toFixed(2)} Cr`;
 
       const retPct = gross > 0 ? ((net / gross) * 100.0) : 0;
       document.getElementById('sideRetention').innerText = `Retention: ${retPct.toFixed(1)}%`;
 
-      // Render 3-Month Sparkbars in Hero Card
-      renderHeroSparkbars(currentTrends);
-
-      // Render 3-Month Sourcing Evolution (Lump vs SIP vs STP)
-      renderSourcingEvolution(currentTrends);
+      // Inflow Sourcing Breakdown: Lump | SIP | STP
+      const lump = Math.max(0, gross - sip - stp);
+      const inflowEl = document.getElementById('sideInflowBreakdown');
+      if (inflowEl) {
+        inflowEl.innerHTML = `<span>Inflows: <b>Lump: ₹${lump.toFixed(1)} Cr</b> | <b>SIP: ₹${sip.toFixed(1)} Cr</b> | <b>STP: ₹${stp.toFixed(1)} Cr</b></span>`;
+      }
 
       // 4 Tiles
       document.getElementById('sideSip').innerText = `₹${sip.toFixed(2)} Cr`;
@@ -519,199 +511,45 @@
       document.getElementById('sideAum').innerText = aum > 10000 ? `₹${(aum/1000).toFixed(1)}k Cr` : `₹${Math.round(aum).toLocaleString()} Cr`;
       document.getElementById('sideMfds').innerText = `${(mfds || 0).toLocaleString()} MFDs`;
 
-      // Render 4-Tile Trends & Deltas
-      renderTileTrends(currentTrends);
-
       // Asset Class Mix Calculation
       calculateAndRenderAssetMix(currentSchemes);
 
-      // Render Schemes or Product Rotation depending on active tab
-      if (currentSchemeTab === 'rotation') {
-        renderSchemeRotation();
-      } else {
-        renderSchemes();
-      }
+      // Render Schemes
+      renderSchemes();
     }
 
-    function renderHeroSparkbars(trends) {
-      const cont = document.getElementById('heroSparkBars');
-      const deltaEl = document.getElementById('sideTrendDelta');
-      const retProgEl = document.getElementById('retentionProgression');
-      if (!cont || !trends || trends.length === 0) return;
+    function calculateAndRenderAssetMix(schemes) {
+      let eq = 0, hy = 0, db = 0, lq = 0, pa = 0, tot = 0;
+      schemes.forEach(s => {
+        let v = 0;
+        if (currentSchemeTab === 'gross') v = s.gross_inflows_cr || 0;
+        else if (currentSchemeTab === 'sip') v = s.active_sip_cr || 0;
+        else v = s.closing_aum_cr || 0;
 
-      let maxAbs = 1;
-      trends.forEach(t => {
-        const val = Math.abs(t.net_cr || 0);
-        if (val > maxAbs) maxAbs = val;
+        tot += v;
+        const ac = (s.asset_class || '').toUpperCase();
+        if (ac.includes('EQUITY')) eq += v;
+        else if (ac.includes('HYBRID')) hy += v;
+        else if (ac.includes('DEBT')) db += v;
+        else if (ac.includes('LIQUID')) lq += v;
+        else if (ac.includes('PASSIVE')) pa += v;
       });
 
-      // Calculate MoM trajectory for delta pill
-      if (trends.length >= 2) {
-        const prev = trends[trends.length - 2].net_cr || 0;
-        const curr = trends[trends.length - 1].net_cr || 0;
-        if (prev !== 0) {
-          const momPct = ((curr - prev) / Math.abs(prev)) * 100;
-          const sign = momPct >= 0 ? '+' : '';
-          if (momPct < -50) {
-            deltaEl.className = 'trend-delta-pill trend-pill-neg';
-            deltaEl.innerText = `▼ ${sign}${momPct.toFixed(1)}% MoM Tax Dip`;
-          } else if (momPct >= 0) {
-            deltaEl.className = 'trend-delta-pill trend-pill-pos';
-            deltaEl.innerText = `▲ ${sign}${momPct.toFixed(1)}% MoM Growth`;
-          } else {
-            deltaEl.className = 'trend-delta-pill trend-pill-neg';
-            deltaEl.innerText = `▼ ${sign}${momPct.toFixed(1)}% MoM`;
-          }
-        }
+      if (tot > 0) {
+        const eqP = Math.round((eq / tot) * 100);
+        const hyP = Math.round((hy / tot) * 100);
+        const paP = Math.round((pa / tot) * 100);
+        const dbP = Math.round((db / tot) * 100);
+        const lqP = Math.max(0, 100 - eqP - hyP - paP - dbP);
+
+        document.getElementById('barEq').style.width = `${eqP}%`;
+        document.getElementById('barHy').style.width = `${hyP}%`;
+        document.getElementById('barPa').style.width = `${paP}%`;
+        document.getElementById('barDb').style.width = `${dbP}%`;
+        document.getElementById('barLq').style.width = `${lqP}%`;
+
+        document.getElementById('mixDetail').innerText = `Equity: ${eqP}% | Hybrid: ${hyP}% | Debt: ${dbP}% | Liquid: ${lqP}% | Passive: ${paP}%`;
       }
-
-      // Retention progression
-      if (retProgEl) {
-        retProgEl.innerHTML = trends.map(t => `${t.month.split('-')[0]}: <b>${(t.retention_pct || 0).toFixed(1)}%</b>`).join(' ➔ ');
-      }
-
-      cont.innerHTML = trends.map(t => {
-        const net = t.net_cr || 0;
-        const isPos = net >= 0;
-        const barHeight = Math.max(4, Math.round((Math.abs(net) / maxAbs) * 26));
-        const isActive = (t.month === currentMonth && currentHorizon !== 'Q1');
-        const valStr = Math.abs(net) >= 1000 ? `${(net/1000).toFixed(1)}k` : `${Math.round(net)}`;
-
-        return `
-          <div class="sparkbar-col ${isActive ? 'active-col' : ''}" onclick="switchHorizon('${t.month}')" title="${t.month}: Net ${isPos?'+':''}₹${net.toFixed(2)} Cr">
-            <span class="sparkbar-val" style="color:${isPos ? '#15803d' : '#b91c1c'};">${isPos?'+':''}${valStr}</span>
-            <div class="sparkbar-bar ${isPos ? 'pos' : 'neg'}" style="height:${barHeight}px;"></div>
-            <span class="sparkbar-lbl">${t.month.split('-')[0]}</span>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function renderSourcingEvolution(trends) {
-      const cont = document.getElementById('sourcingTimeline');
-      if (!cont || !trends || trends.length === 0) return;
-
-      const formatCr = (v) => v >= 1000 ? `${(v/1000).toFixed(1)}k` : Math.round(v);
-
-      cont.innerHTML = trends.map(t => {
-        const lump = t.lumpsum_cr || 0;
-        const sip = t.sip_cr || 0;
-        const stp = t.stp_cr || 0;
-        const tot = Math.max(1, lump + sip + stp);
-        const lumpP = Math.round((lump / tot) * 100);
-        const sipP = Math.round((sip / tot) * 100);
-        const stpP = Math.max(0, 100 - lumpP - sipP);
-        const isActive = (t.month === currentMonth && currentHorizon !== 'Q1');
-
-        return `
-          <div class="s-row ${isActive ? 'active-month' : ''}" onclick="switchHorizon('${t.month}')" style="cursor:pointer;" title="Click to inspect ${t.month}">
-            <span class="s-row-lbl">${t.month}</span>
-            <div class="s-row-bar-wrap">
-              <div class="s-seg-lump" style="width:${lumpP}%;"></div>
-              <div class="s-seg-sip" style="width:${sipP}%;"></div>
-              <div class="s-seg-stp" style="width:${stpP}%;"></div>
-            </div>
-            <span class="s-row-vals">L: ₹${formatCr(lump)} | S: ₹${formatCr(sip)} | T: ₹${formatCr(stp)}</span>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function renderTileTrends(trends) {
-      if (!trends || trends.length === 0) return;
-      const formatCr = v => v >= 1000 ? `${(v/1000).toFixed(1)}k` : Math.round(v);
-      const formatAum = v => v >= 100000 ? `${(v/100000).toFixed(2)}L` : (v >= 1000 ? `${(v/1000).toFixed(1)}k` : Math.round(v));
-
-      // SIP Tile
-      const sipEl = document.getElementById('sideSipTrend');
-      const sipDelta = document.getElementById('sideSipDelta');
-      if (trends.length >= 2) {
-        const aprSip = trends[0].sip_cr || 0;
-        const junSip = trends[trends.length - 1].sip_cr || 0;
-        const dPct = aprSip > 0 ? ((junSip - aprSip) / aprSip) * 100 : 0;
-        if (sipDelta) sipDelta.innerText = `${dPct >= 0 ? '+' : ''}${dPct.toFixed(1)}%`;
-        if (sipEl) {
-          sipEl.innerText = trends.map(t => `${t.month.split('-')[0]}: ₹${formatCr(t.sip_cr)}`).join(' ➔ ');
-        }
-      }
-
-      // AUM Tile
-      const aumEl = document.getElementById('sideAumTrend');
-      const aumDelta = document.getElementById('sideAumDelta');
-      if (trends.length >= 2) {
-        const aprAum = trends[0].aum_cr || 0;
-        const junAum = trends[trends.length - 1].aum_cr || 0;
-        const aPct = aprAum > 0 ? ((junAum - aprAum) / aprAum) * 100 : 0;
-        if (aumDelta) aumDelta.innerText = `${aPct >= 0 ? '+' : ''}${aPct.toFixed(1)}%`;
-        if (aumEl) {
-          aumEl.innerText = trends.map(t => `${t.month.split('-')[0]}: ₹${formatAum(t.aum_cr)}`).join(' ➔ ');
-        }
-      }
-
-      // Avg Ticket
-      const ticketEl = document.getElementById('sideTicketTrend');
-      if (ticketEl) ticketEl.innerText = `Stable across Q1`;
-
-      // MFD Footprint
-      const mfdsEl = document.getElementById('sideMfdsTrend');
-      if (mfdsEl) mfdsEl.innerText = `Verified distribution`;
-    }
-
-    function switchHorizon(horizon) {
-      if (horizon === 'Q1') {
-        currentHorizon = 'Q1';
-        updateHorizonPillUI();
-        renderQ1AggregateView();
-      } else {
-        currentHorizon = horizon;
-        currentMonth = horizon;
-        const monthSel = document.getElementById('monthSelect');
-        if (monthSel) monthSel.value = horizon;
-        updateHorizonPillUI();
-        loadMonthData();
-      }
-    }
-
-    function updateHorizonPillUI() {
-      const pApr = document.getElementById('pillApr');
-      const pMay = document.getElementById('pillMay');
-      const pJun = document.getElementById('pillJun');
-      const pQ1 = document.getElementById('pillQ1');
-
-      if (pApr) pApr.className = 'h-pill ' + (currentHorizon === 'Apr-26' ? 'active' : '');
-      if (pMay) pMay.className = 'h-pill ' + (currentHorizon === 'May-26' ? 'active' : '');
-      if (pJun) pJun.className = 'h-pill ' + (currentHorizon === 'Jun-26' ? 'active' : '');
-      if (pQ1) pQ1.className = 'h-pill q1-tag ' + (currentHorizon === 'Q1' ? 'active' : '');
-    }
-
-    function renderQ1AggregateView() {
-      if (!currentTrends || currentTrends.length === 0) return;
-
-      let totNet = 0, totGross = 0, totOutflow = 0;
-      currentTrends.forEach(t => {
-        totNet += (t.net_cr || 0);
-        totGross += (t.gross_cr || 0);
-        totOutflow += (t.outflow_cr || 0);
-      });
-
-      const netSign = totNet >= 0 ? '+' : '';
-      document.getElementById('heroLabel').innerText = "Total Q1 Capital Retained (Apr - Jun 2026)";
-      document.getElementById('sideNet').innerText = `${netSign}₹${totNet.toFixed(2)} Cr`;
-      document.getElementById('sideNet').style.color = totNet >= 0 ? '#166534' : '#b91c1c';
-      document.getElementById('sideGross').innerText = `Total Gross: ₹${totGross.toFixed(2)} Cr`;
-      document.getElementById('sideOutflow').innerText = `Total Outflow: ₹${totOutflow.toFixed(2)} Cr`;
-
-      const q1RetPct = totGross > 0 ? ((totNet / totGross) * 100.0) : 0;
-      document.getElementById('sideRetention').innerText = `Q1 Retention: ${q1RetPct.toFixed(1)}%`;
-
-      const deltaEl = document.getElementById('sideTrendDelta');
-      if (deltaEl) {
-        deltaEl.className = 'trend-delta-pill trend-pill-pos';
-        deltaEl.innerText = 'Q1 Combined Universe';
-      }
-
-      // Switch to rotation tab automatically
-      setSchemeTab('rotation');
     }
 
     function setSchemeTab(tab) {
@@ -719,74 +557,8 @@
       document.getElementById('tabGross').className = 't-btn ' + (tab === 'gross' ? 'active' : '');
       document.getElementById('tabSip').className = 't-btn ' + (tab === 'sip' ? 'active' : '');
       document.getElementById('tabAum').className = 't-btn ' + (tab === 'aum' ? 'active' : '');
-      document.getElementById('tabRotation').className = 't-btn highlight-tab ' + (tab === 'rotation' ? 'active' : '');
-
-      const sub = document.getElementById('schemeSubtitle');
-      if (tab === 'rotation') {
-        if (sub) sub.innerText = 'Category Rotation & Trajectory (Q1 FY27)';
-        renderSchemeRotation();
-      } else {
-        if (sub) sub.innerText = tab === 'gross' ? 'Top Scheme Inflows' : (tab === 'sip' ? 'Top SIP Books' : 'Closing AUM Leaders');
-        calculateAndRenderAssetMix(currentSchemes);
-        renderSchemes();
-      }
-    }
-
-    function renderSchemeRotation() {
-      const cont = document.getElementById('schemeContainer');
-      if (!cont) return;
-
-      if (!currentSchemeRotation || currentSchemeRotation.length === 0) {
-        cont.innerHTML = `<div style="color:#94a3b8; font-size:12px; padding:12px; text-align:center;">No rotation data available for this selection.</div>`;
-        return;
-      }
-
-      const formatVal = (v) => {
-        if (Math.abs(v) >= 1000) return `₹${(v / 1000).toFixed(1)}k Cr`;
-        return `₹${v.toFixed(1)} Cr`;
-      };
-
-      cont.innerHTML = currentSchemeRotation.slice(0, 15).map((s, idx) => {
-        const apr = s.apr || {};
-        const may = s.may || {};
-        const jun = s.jun || {};
-
-        const momTag = s.momentum || 'Steady Flow';
-        const momClass = s.momentum_class || 'neutral';
-
-        const netAprSign = (apr.net || 0) >= 0 ? '+' : '';
-        const netMaySign = (may.net || 0) >= 0 ? '+' : '';
-        const netJunSign = (jun.net || 0) >= 0 ? '+' : '';
-
-        return `
-          <div class="rotation-card">
-            <div class="rot-head">
-              <div>
-                <div class="rot-title">${idx + 1}. ${s.scheme_type}</div>
-                <div class="rot-cat">${s.asset_class}</div>
-              </div>
-              <span class="rot-momentum ${momClass}">${momTag}</span>
-            </div>
-            <div class="rot-metrics">
-              <div class="rot-col">
-                <div class="rot-col-m">Apr-26</div>
-                <div class="rot-col-g">${formatVal(apr.gross || 0)}</div>
-                <div class="rot-col-n ${(apr.net || 0) >= 0 ? 'pos' : 'neg'}">Net: ${netAprSign}${formatVal(apr.net || 0)}</div>
-              </div>
-              <div class="rot-col" style="border-left:1px dashed #e2e8f0; border-right:1px dashed #e2e8f0;">
-                <div class="rot-col-m">May-26</div>
-                <div class="rot-col-g">${formatVal(may.gross || 0)}</div>
-                <div class="rot-col-n ${(may.net || 0) >= 0 ? 'pos' : 'neg'}">Net: ${netMaySign}${formatVal(may.net || 0)}</div>
-              </div>
-              <div class="rot-col">
-                <div class="rot-col-m">Jun-26</div>
-                <div class="rot-col-g">${formatVal(jun.gross || 0)}</div>
-                <div class="rot-col-n ${(jun.net || 0) >= 0 ? 'pos' : 'neg'}">Net: ${netJunSign}${formatVal(jun.net || 0)}</div>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
+      calculateAndRenderAssetMix(currentSchemes);
+      renderSchemes();
     }
 
     function renderSchemes() {
@@ -873,7 +645,7 @@
             renderStatePolygons();
             renderDistrictPolygons();
             await renderHeatAndPins();
-            renderSidebarPincode(data.summary, data.schemes, data.monthly_trends, data.scheme_rotation);
+            renderSidebarPincode(data.summary, data.schemes);
           } else {
             alert(`PIN ${pin} not found in verified database for ${currentMonth}.`);
           }
@@ -885,4 +657,768 @@
       } else {
         alert("Please enter a valid 6-digit postal PIN code.");
       }
+    }
+
+    // ==========================================
+    // DEEP-DIVE TRAJECTORY COCKPIT MODAL LOGIC
+    // ==========================================
+    let currentCockpitHorizon = '3M';
+    let currentCockpitTab = 'waterfall';
+    let cockpitDataCache = null;
+
+    function onCockpitKeyDown(e) {
+      if (e.key === 'Escape') {
+        closeCockpitModal();
+      }
+    }
+
+    function openCockpitModal() {
+      const modal = document.getElementById('cockpitModal');
+      if (!modal) return;
+      modal.style.display = 'flex';
+      window.addEventListener('keydown', onCockpitKeyDown);
+      loadCockpitData();
+    }
+
+    function closeCockpitModal() {
+      const modal = document.getElementById('cockpitModal');
+      if (modal) modal.style.display = 'none';
+      window.removeEventListener('keydown', onCockpitKeyDown);
+    }
+
+    function handleCockpitBackdropClick(e) {
+      if (e.target.id === 'cockpitModal') {
+        closeCockpitModal();
+      }
+    }
+
+    function setCockpitHorizon(horizon) {
+      currentCockpitHorizon = horizon;
+      const p3 = document.getElementById('cpill3M');
+      const p6 = document.getElementById('cpill6M');
+      const p1 = document.getElementById('cpill1Y');
+      if (p3) p3.className = 'c-pill ' + (horizon === '3M' ? 'active' : '');
+      if (p6) p6.className = 'c-pill ' + (horizon === '6M' ? 'active' : '');
+      if (p1) p1.className = 'c-pill ' + (horizon === '1Y' ? 'active' : '');
+      loadCockpitData();
+    }
+
+    function setCockpitTab(tab) {
+      currentCockpitTab = tab;
+      const tW = document.getElementById('cTabWaterfall');
+      const tS = document.getElementById('cTabSourcing');
+      const tR = document.getElementById('cTabRotation');
+      if (tW) tW.className = 'cockpit-tab ' + (tab === 'waterfall' ? 'active' : '');
+      if (tS) tS.className = 'cockpit-tab ' + (tab === 'sourcing' ? 'active' : '');
+      if (tR) tR.className = 'cockpit-tab ' + (tab === 'rotation' ? 'active' : '');
+
+      const pW = document.getElementById('paneWaterfall');
+      const pS = document.getElementById('paneSourcing');
+      const pR = document.getElementById('paneRotation');
+      if (pW) pW.style.display = (tab === 'waterfall' ? 'flex' : 'none');
+      if (pS) pS.style.display = (tab === 'sourcing' ? 'flex' : 'none');
+      if (pR) pR.style.display = (tab === 'rotation' ? 'flex' : 'none');
+    }
+
+    async function loadCockpitData() {
+      showLoader(true);
+      try {
+        let level = 'national';
+        let query = `horizon=${currentCockpitHorizon}&level=national`;
+        if (selectedPincode) {
+          level = 'pincode';
+          query = `horizon=${currentCockpitHorizon}&level=pincode&pincode=${selectedPincode}&state=${encodeURIComponent(selectedState||'')}&district=${encodeURIComponent(selectedDistrict||'')}`;
+        } else if (selectedDistrict) {
+          level = 'district';
+          query = `horizon=${currentCockpitHorizon}&level=district&district=${encodeURIComponent(selectedDistrict)}&state=${encodeURIComponent(selectedState||'')}`;
+        } else if (selectedState) {
+          level = 'state';
+          query = `horizon=${currentCockpitHorizon}&level=state&state=${encodeURIComponent(selectedState)}`;
+        }
+
+        const res = await fetch(`/api/multi_period_analytics?${query}`);
+        const data = await res.json();
+        cockpitDataCache = data;
+
+        renderCockpitHeader(data);
+        renderCockpitKpis(data);
+        renderCockpitWaterfall(data);
+        renderCockpitSourcing(data);
+        renderCockpitRotation(data);
+      } catch (err) {
+        console.error("Failed to load cockpit data:", err);
+      } finally {
+        showLoader(false);
+      }
+    }
+
+    function renderCockpitHeader(data) {
+      const titleEl = document.getElementById('cockpitTitle');
+      const subEl = document.getElementById('cockpitSubtitle');
+      if (!titleEl || !subEl || !data || !data.entity) return;
+
+      const mStart = data.months[0];
+      const mEnd = data.months[data.months.length - 1];
+      const periodLabel = data.horizon === '3M' ? 'Q1 FY27' : (data.horizon === '6M' ? 'H2 FY26' : 'Full FY26 Universe');
+
+      titleEl.innerText = `${data.entity.title} — Multi-Period Trajectory`;
+      subEl.innerText = `${mStart} to ${mEnd} (${data.months.length} Months · ${periodLabel}) | ${data.entity.subtitle}`;
+    }
+
+    function renderCockpitKpis(data) {
+      const ribbon = document.getElementById('cockpitKpiRibbon');
+      if (!ribbon || !data || !data.summary) return;
+
+      const s = data.summary;
+      const netSign = s.total_net_cr >= 0 ? '+' : '';
+      const netClass = s.total_net_cr >= 0 ? 'green' : 'red';
+      const lastW = (data.waterfall && data.waterfall.length) ? data.waterfall[data.waterfall.length - 1] : {};
+
+      ribbon.innerHTML = `
+        <div class="ckpi-card">
+          <div class="ckpi-label-row">
+            <span class="ckpi-label">Cumulative Net Retained</span>
+            <span class="ckpi-tag ${netClass}">${s.overall_retention_pct}% Retained</span>
+          </div>
+          <div class="ckpi-val ${netClass}">${netSign}₹${s.total_net_cr.toFixed(2)} Cr</div>
+          <div class="ckpi-sub">Total fresh wealth absorbed</div>
+        </div>
+
+        <div class="ckpi-card">
+          <div class="ckpi-label-row">
+            <span class="ckpi-label">Gross Capital Inflows</span>
+            <span class="ckpi-tag blue">${data.months.length} Months Total</span>
+          </div>
+          <div class="ckpi-val">₹${s.total_gross_cr.toFixed(2)} Cr</div>
+          <div class="ckpi-sub">Outflows: ₹${s.total_outflow_cr.toFixed(2)} Cr leaked</div>
+        </div>
+
+        <div class="ckpi-card">
+          <div class="ckpi-label-row">
+            <span class="ckpi-label">Latest SIP Run-Rate</span>
+            <span class="ckpi-tag green">Sticky Money</span>
+          </div>
+          <div class="ckpi-val">₹${(s.latest_sip_cr||0).toFixed(2)} Cr/mo</div>
+          <div class="ckpi-sub">${(lastW.sip_count||0).toLocaleString()} debits (₹${Math.round(lastW.avg_sip_ticket_inr||0)} avg)</div>
+        </div>
+
+        <div class="ckpi-card">
+          <div class="ckpi-label-row">
+            <span class="ckpi-label">Snapshot Closing AUM</span>
+            <span class="ckpi-tag blue">Footprint</span>
+          </div>
+          <div class="ckpi-val">₹${(s.latest_aum_cr||0).toFixed(2)} Cr</div>
+          <div class="ckpi-sub">${(s.latest_mfds||0).toLocaleString()} Active competing MFDs</div>
+        </div>
+      `;
+    }
+
+    function renderCockpitWaterfall(data) {
+      const wrap = document.getElementById('waterfallTableWrap');
+      if (!wrap || !data || !data.waterfall) return;
+
+      const wf = data.waterfall;
+      const maxNet = Math.max(...wf.map(r => Math.abs(r.net_cr || 0)), 1);
+
+      let rowsHtml = wf.map(r => {
+        const netSign = r.net_cr >= 0 ? '+' : '';
+        const netColor = r.net_cr >= 0 ? '#15803d' : '#b91c1c';
+        const barFillClass = r.net_cr >= 0 ? 'pos' : 'neg';
+        const barWidthPct = Math.min(100, Math.round((Math.abs(r.net_cr) / maxNet) * 100));
+
+        return `
+          <tr>
+            <td style="font-weight:700; color:#0f172a;">${r.month}</td>
+            <td class="t-right" style="color:#0369a1; font-weight:600;">₹${r.gross_cr.toFixed(2)} Cr</td>
+            <td class="t-right" style="color:#64748b;">₹${r.outflow_cr.toFixed(2)} Cr</td>
+            <td class="t-right" style="color:${netColor}; font-weight:700;">${netSign}₹${r.net_cr.toFixed(2)} Cr</td>
+            <td class="t-center">
+              <span style="font-weight:700; color:${r.retention_pct>=25?'#15803d':'#b45309'};">${r.retention_pct}%</span>
+            </td>
+            <td>
+              <div class="net-flow-bar-cell">
+                <div class="net-bar-track">
+                  <div class="net-bar-fill ${barFillClass}" style="width:${barWidthPct}%;"></div>
+                </div>
+                <span style="font-size:0.65rem; color:#64748b; width:35px; text-align:right;">${barWidthPct}%</span>
+              </div>
+            </td>
+            <td class="t-right" style="font-weight:700; color:#0f172a;">₹${r.aum_cr.toFixed(2)} Cr</td>
+          </tr>
+        `;
+      }).join('');
+
+      // Totals / Summary Row
+      const s = data.summary;
+      const totNetSign = s.total_net_cr >= 0 ? '+' : '';
+      const totNetColor = s.total_net_cr >= 0 ? '#15803d' : '#b91c1c';
+
+      const tableHtml = `
+        <div class="cockpit-table-container">
+          <table class="cockpit-table">
+            <thead>
+              <tr>
+                <th>Period Month</th>
+                <th class="t-right">Gross Inflow</th>
+                <th class="t-right">Redemptions / Outflows</th>
+                <th class="t-right">Net Business Retained</th>
+                <th class="t-center">Retention Rate</th>
+                <th class="t-right" style="padding-right:30px;">Net Momentum Flow</th>
+                <th class="t-right">Closing AUM</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+              <tr class="total-row">
+                <td>Cumulative / Latest</td>
+                <td class="t-right" style="color:#0369a1;">₹${s.total_gross_cr.toFixed(2)} Cr</td>
+                <td class="t-right" style="color:#64748b;">₹${s.total_outflow_cr.toFixed(2)} Cr</td>
+                <td class="t-right" style="color:${totNetColor}; font-size:0.88rem;">${totNetSign}₹${s.total_net_cr.toFixed(2)} Cr</td>
+                <td class="t-center" style="font-size:0.84rem; color:#15803d;">${s.overall_retention_pct}%</td>
+                <td class="t-right" style="font-size:0.68rem; color:#64748b;">Overall Trajectory</td>
+                <td class="t-right" style="color:#0f172a; font-size:0.88rem;">₹${(s.latest_aum_cr||0).toFixed(2)} Cr</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      // Vertical Column Bars (1 Bar per Month, Retained Value up at top, Redemptions at bottom)
+      const maxGross = Math.max(...wf.map(r => r.gross_cr || 0), 1);
+      const isCompact = (wf.length > 6); // 1Y view
+
+      const formatShortCr = (v) => {
+        const absV = Math.abs(v);
+        if (absV >= 1000) return `₹${(v / 1000).toFixed(1)}k Cr`;
+        return `₹${v.toFixed(0)} Cr`;
+      };
+
+      const verticalColsHtml = wf.map(r => {
+        const netSign = r.net_cr >= 0 ? '+' : '';
+        const isPos = r.net_cr >= 0;
+        const gross = r.gross_cr || 0;
+        const outflow = r.outflow_cr || 0;
+
+        // Column bar total height proportional to Gross Inflow (min 50px, max 135px)
+        const barHeightPx = Math.max(50, Math.round((gross / maxGross) * 135));
+
+        // Retention % calculation
+        const retPct = Math.max(0, Math.min(100, r.retention_pct || 0));
+        const leakPct = Math.max(0, 100 - retPct);
+
+        let segmentsHtml = '';
+        if (isPos) {
+          // Top segment = Retained (Emerald Green)
+          // Bottom segment = Outflows / Redemptions (Soft Coral Red)
+          segmentsHtml = `
+            <div class="wf-vseg-retained" style="height:${retPct}%;" title="Retained: ₹${r.net_cr.toFixed(2)} Cr (${retPct}%)"></div>
+            <div class="wf-vseg-outflow" style="height:${leakPct}%;" title="Outflows / Redemptions: ₹${outflow.toFixed(2)} Cr (${leakPct.toFixed(1)}%)"></div>
+          `;
+        } else {
+          // Entire bar is negative drain
+          segmentsHtml = `
+            <div class="wf-vseg-drain" title="Excess Outflow Drain: ₹${r.net_cr.toFixed(2)} Cr"></div>
+          `;
+        }
+
+        const netDisplay = formatShortCr(r.net_cr);
+        const grossDisplay = formatShortCr(gross);
+        const outDisplay = formatShortCr(outflow);
+        const monthLabel = isCompact ? r.month.split('-')[0] : r.month;
+
+        return `
+          <div class="wf-vcol" title="${r.month}: Gross ${grossDisplay} | Outflow ${outDisplay} | Net ${netSign}${r.net_cr.toFixed(2)} Cr (${r.retention_pct}%)">
+            <!-- Top Metric: Retained Value + Badge -->
+            <div class="wf-vcol-top">
+              <span class="wf-vnet-val ${isPos ? 'pos' : 'neg'}">${netSign}${netDisplay}</span>
+              <span class="wf-vret-badge ${isPos ? 'pos' : 'neg'}">${r.retention_pct}%</span>
+            </div>
+
+            <!-- Vertical Bar Stack: Retained UP, Redemptions BOTTOM -->
+            <div class="wf-vbar-track" style="height:${barHeightPx}px;">
+              ${segmentsHtml}
+            </div>
+
+            <!-- Bottom Labels: Month + Gross + Outflow -->
+            <div class="wf-vcol-bottom">
+              <span class="wf-vcol-month">${monthLabel}</span>
+              <span class="wf-vcol-gross">${grossDisplay}</span>
+              <span class="wf-vcol-out">Out: ${outDisplay}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Visual Card Wrapper
+      const isTotalPos = s.total_net_cr >= 0;
+      const periodName = data.horizon === '3M' ? '3 Months (Q1 FY27)' : (data.horizon === '6M' ? '6 Months (H2 FY26)' : '1 Year (Full FY26)');
+
+      const visualCardHtml = `
+        <div class="waterfall-visual-card">
+          <div class="wf-vis-head">
+            <span class="wf-vis-title">Monthly Capital Dynamics (1 Bar per Month · Retained Value at Top · Redemptions at Bottom)</span>
+            <div class="wf-vis-legend">
+              <span class="wf-leg-item"><span class="wf-leg-dot" style="background:#10b981;"></span> Retained Capital (Top)</span>
+              <span class="wf-leg-item"><span class="wf-leg-dot" style="background:#fca5a5;"></span> Redemptions / Outflows (Bottom)</span>
+            </div>
+          </div>
+
+          <!-- Vertical Bar Canvas -->
+          <div class="wf-vertical-canvas">
+            ${verticalColsHtml}
+          </div>
+
+          <!-- Summary Strip -->
+          <div class="wf-total-card">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-size:0.75rem; font-weight:800; color:#0f172a; font-family:'JetBrains Mono'; text-transform:uppercase;">${periodName} Cumulative</span>
+              <span class="wf-vret-badge pos" style="font-size:0.70rem; padding:2px 7px;">${s.overall_retention_pct}% Total Retention</span>
+            </div>
+            <div style="font-family:'JetBrains Mono'; font-size:0.74rem;">
+              <span style="font-weight:800; color:#15803d;">${isTotalPos ? '+' : ''}₹${s.total_net_cr.toFixed(2)} Cr Retained</span>
+              <span style="color:#64748b; margin-left:8px;">out of ₹${s.total_gross_cr.toFixed(2)} Cr Gross (Outflows: ₹${s.total_outflow_cr.toFixed(2)} Cr)</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      wrap.innerHTML = visualCardHtml + tableHtml;
+    }
+
+    function renderCockpitSourcing(data) {
+      const wrap = document.getElementById('cockpitSourcingWrap');
+      if (!wrap || !data || !data.waterfall) return;
+
+      const wf = data.waterfall;
+
+      const formatAum = (v) => {
+        if (!v) return '₹0 Cr';
+        if (v >= 100000) return `₹${(v / 100000).toFixed(2)} L Cr`;
+        if (v >= 1000) return `₹${(v / 1000).toFixed(1)}k Cr`;
+        return `₹${v.toFixed(2)} Cr`;
+      };
+
+      const formatDebits = (c) => {
+        if (!c) return '0 Debits';
+        if (c >= 10000000) return `${(c / 10000000).toFixed(2)} Cr Debits`;
+        if (c >= 100000) return `${(c / 100000).toFixed(1)} L Debits`;
+        return `${c.toLocaleString()} Debits`;
+      };
+
+      // Enhanced Section 2: Visual 100% Split + Direct Core Metrics
+      const chartRowsHtml = wf.map(r => {
+        return `
+          <div class="sourcing-bar-row">
+            <!-- 1. Month & Gross -->
+            <div class="s-row-month-wrap">
+              <span class="s-row-month">${r.month}</span>
+              <span class="s-row-gross-sub">Gross ₹${r.gross_cr.toFixed(0)} Cr</span>
+            </div>
+
+            <!-- 2. 100% Stacked Sourcing Track -->
+            <div class="s-row-track-wrap">
+              <div class="s-row-track" title="Gross: ₹${r.gross_cr.toFixed(2)} Cr | Lump: ${r.lump_pct}% | SIP: ${r.sip_pct}% | STP: ${r.stp_pct}%">
+                <div class="s-seg-lump" style="width:${r.lump_pct}%;" title="Lumpsum: ₹${(r.lumpsum_cr||0).toFixed(2)} Cr (${r.lump_pct}%)"></div>
+                <div class="s-seg-sip" style="width:${r.sip_pct}%;" title="SIP Harvest: ₹${(r.sip_cr||0).toFixed(2)} Cr (${r.sip_pct}%)"></div>
+                <div class="s-seg-stp" style="width:${r.stp_pct}%;" title="STP Inflow: ₹${(r.stp_cr||0).toFixed(2)} Cr (${r.stp_pct}%)"></div>
+              </div>
+              <div class="s-row-legend">
+                <span class="s-leg-item" style="color:#2563eb;"><strong>${r.lump_pct}%</strong> Lump</span>
+                <span class="s-leg-item" style="color:#10b981;"><strong>${r.sip_pct}%</strong> SIP</span>
+                <span class="s-leg-item" style="color:#f59e0b;"><strong>${r.stp_pct}%</strong> STP</span>
+              </div>
+            </div>
+
+            <!-- 3. Monthly SIP Harvest -->
+            <div class="s-metric-cell">
+              <span class="s-metric-val sip-green">₹${(r.sip_cr||0).toFixed(2)} Cr</span>
+              <span class="s-metric-sub">${formatDebits(r.sip_count||0)}</span>
+            </div>
+
+            <!-- 4. Avg SIP Ticket -->
+            <div class="s-metric-cell">
+              <span class="s-metric-val">₹${Math.round(r.avg_sip_ticket_inr||0).toLocaleString()}</span>
+              <span class="s-metric-sub">/ debit</span>
+            </div>
+
+            <!-- 5. Active MFDs -->
+            <div class="s-metric-cell">
+              <span class="s-metric-val mfd-blue">${(r.active_mfds||0).toLocaleString()}</span>
+              <span class="s-metric-sub">Active MFDs</span>
+            </div>
+
+            <!-- 6. Closing AUM -->
+            <div class="s-metric-cell">
+              <span class="s-metric-val">${formatAum(r.aum_cr||0)}</span>
+              <span class="s-metric-sub">Closing AUM</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Trajectory Delta Summary (First vs Last Month)
+      const firstW = wf[0] || {};
+      const lastW = wf[wf.length - 1] || {};
+      const dSip = (lastW.sip_cr || 0) - (firstW.sip_cr || 0);
+      const dSipSign = dSip >= 0 ? '+' : '';
+      const dTicket = Math.round((lastW.avg_sip_ticket_inr || 0) - (firstW.avg_sip_ticket_inr || 0));
+      const dTicketSign = dTicket >= 0 ? '+' : '';
+      const dMfd = (lastW.active_mfds || 0) - (firstW.active_mfds || 0);
+      const dMfdSign = dMfd >= 0 ? '+' : '';
+      const dAum = (lastW.aum_cr || 0) - (firstW.aum_cr || 0);
+      const dAumSign = dAum >= 0 ? '+' : '';
+
+      const trajectoryFooterHtml = `
+        <div class="sourcing-trajectory-footer">
+          <span class="s-traj-tag">${data.horizon} Trajectory Trend</span>
+          <div class="s-traj-items">
+            <div class="s-traj-stat">
+              <span>SIP Run-Rate:</span>
+              <strong>₹${(firstW.sip_cr||0).toFixed(1)} ➔ ₹${(lastW.sip_cr||0).toFixed(1)} Cr</strong>
+              <span class="${dSip >= 0 ? 'delta-pos' : 'delta-neg'}">(${dSipSign}₹${dSip.toFixed(1)} Cr)</span>
+            </div>
+            <div class="s-traj-stat">
+              <span>Avg Ticket:</span>
+              <strong>₹${Math.round(firstW.avg_sip_ticket_inr||0)} ➔ ₹${Math.round(lastW.avg_sip_ticket_inr||0)}</strong>
+              <span class="${dTicket >= 0 ? 'delta-pos' : 'delta-neg'}">(${dTicketSign}₹${dTicket}/debit)</span>
+            </div>
+            <div class="s-traj-stat">
+              <span>Active MFDs:</span>
+              <strong>${(firstW.active_mfds||0).toLocaleString()} ➔ ${(lastW.active_mfds||0).toLocaleString()}</strong>
+              <span class="${dMfd >= 0 ? 'delta-pos' : 'delta-neg'}">(${dMfdSign}${dMfd.toLocaleString()})</span>
+            </div>
+            <div class="s-traj-stat">
+              <span>AUM Base:</span>
+              <strong>${formatAum(firstW.aum_cr||0)} ➔ ${formatAum(lastW.aum_cr||0)}</strong>
+              <span class="${dAum >= 0 ? 'delta-pos' : 'delta-neg'}">(${dAumSign}₹${Math.abs(dAum).toFixed(1)} Cr)</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Precision Sourcing & Distribution Table
+      const tableRowsHtml = wf.map(r => {
+        return `
+          <tr>
+            <td style="font-weight:700; color:#0f172a;">${r.month}</td>
+            <td class="t-right" style="font-weight:700;">₹${r.gross_cr.toFixed(2)} Cr</td>
+            <td class="t-right" style="color:#2563eb;">₹${(r.lumpsum_cr||0).toFixed(2)} Cr</td>
+            <td class="t-center"><span style="color:#2563eb; font-weight:700;">${r.lump_pct}%</span></td>
+            <td class="t-right" style="color:#15803d; font-weight:700;">₹${(r.sip_cr||0).toFixed(2)} Cr</td>
+            <td class="t-center"><span style="color:#15803d; font-weight:700;">${r.sip_pct}%</span></td>
+            <td class="t-right" style="color:#d97706;">₹${(r.stp_cr||0).toFixed(2)} Cr</td>
+            <td class="t-center"><span style="color:#d97706; font-weight:700;">${r.stp_pct}%</span></td>
+            <td class="t-right">${(r.sip_count||0).toLocaleString()}</td>
+            <td class="t-right" style="font-weight:700; color:#0f172a;">₹${Math.round(r.avg_sip_ticket_inr||0).toLocaleString()}</td>
+            <td class="t-right" style="font-weight:700; color:#0369a1;">${(r.active_mfds||0).toLocaleString()}</td>
+            <td class="t-right" style="font-weight:700; color:#0f172a;">${formatAum(r.aum_cr||0)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      wrap.innerHTML = `
+        <div class="sourcing-chart-card">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <span style="font-size:0.82rem; font-weight:800; color:#0f172a;">Monthly Sourcing Split & Systematic Distribution Engine</span>
+              <div style="font-size:0.67rem; color:#64748b;">100% Inflow Stack with Direct SIP Harvest, Avg Ticket, Active MFD Network & Closing AUM</div>
+            </div>
+            <div style="display:flex; gap:12px; font-size:0.70rem; font-weight:600;">
+              <span style="display:flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; border-radius:2px; background:#3b82f6;"></span> Tactical Lumpsum</span>
+              <span style="display:flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; border-radius:2px; background:#10b981;"></span> Compounding SIP</span>
+              <span style="display:flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; border-radius:2px; background:#f59e0b;"></span> Systematic STP</span>
+            </div>
+          </div>
+
+          <!-- Column Header Guide -->
+          <div class="sourcing-grid-header">
+            <span>Month</span>
+            <span>Inflow Sourcing Split</span>
+            <span>SIP Harvest</span>
+            <span>Avg Ticket</span>
+            <span>Active MFDs</span>
+            <span>Closing AUM</span>
+          </div>
+
+          <!-- Monthly Rows -->
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            ${chartRowsHtml}
+          </div>
+
+          <!-- Trajectory Footer -->
+          ${trajectoryFooterHtml}
+        </div>
+
+        <div class="cockpit-table-container">
+          <table class="cockpit-table">
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th class="t-right">Total Inflow</th>
+                <th class="t-right">Lumpsum (Cr)</th>
+                <th class="t-center">Lump Share</th>
+                <th class="t-right">SIP Book (Cr)</th>
+                <th class="t-center">SIP Share</th>
+                <th class="t-right">STP Inflow (Cr)</th>
+                <th class="t-center">STP Share</th>
+                <th class="t-right">Active Debits</th>
+                <th class="t-right">Avg Ticket / Debit</th>
+                <th class="t-right">Active MFDs</th>
+                <th class="t-right">Closing AUM</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRowsHtml}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    let currentRotationSort = 'net';
+
+    window.setRotationSort = function(sortType) {
+      currentRotationSort = sortType;
+      if (cockpitDataCache) {
+        renderCockpitRotation(cockpitDataCache);
+      }
+    };
+
+    function renderCockpitRotation(data) {
+      const wrap = document.getElementById('cockpitRotationWrap');
+      if (!wrap || !data || !data.product_rotation) return;
+
+      const schemes = data.product_rotation;
+      if (!schemes || schemes.length === 0) {
+        wrap.innerHTML = `<div style="padding:20px; text-align:center; color:#64748b;">No product rotation data available for this horizon.</div>`;
+        return;
+      }
+
+      const formatCr = (v) => {
+        const absV = Math.abs(v);
+        if (absV >= 1000) return `₹${(v / 1000).toFixed(1)}k Cr`;
+        return `₹${v.toFixed(1)} Cr`;
+      };
+
+      const formatAum = (v) => {
+        if (!v) return '₹0 Cr';
+        if (v >= 100000) return `₹${(v / 100000).toFixed(2)} L Cr`;
+        if (v >= 1000) return `₹${(v / 1000).toFixed(1)}k Cr`;
+        return `₹${v.toFixed(1)} Cr`;
+      };
+
+      // 1. Build rank maps across all dimensions
+      const byInflow = [...schemes].sort((a, b) => (b.total_gross || 0) - (a.total_gross || 0));
+      const bySip = [...schemes].sort((a, b) => (b.latest_sip || 0) - (a.latest_sip || 0));
+      const byAum = [...schemes].sort((a, b) => (b.latest_aum || 0) - (a.latest_aum || 0));
+      const byNet = [...schemes].sort((a, b) => (b.total_net || 0) - (a.total_net || 0));
+
+      const inflowRankMap = {};
+      const sipRankMap = {};
+      const aumRankMap = {};
+      const netRankMap = {};
+
+      byInflow.forEach((s, i) => { inflowRankMap[s.scheme_type] = i + 1; });
+      bySip.forEach((s, i) => { sipRankMap[s.scheme_type] = i + 1; });
+      byAum.forEach((s, i) => { aumRankMap[s.scheme_type] = i + 1; });
+      byNet.forEach((s, i) => { netRankMap[s.scheme_type] = i + 1; });
+
+      const getRankClass = (idx) => idx === 1 ? 'gold' : (idx === 2 ? 'silver' : (idx === 3 ? 'bronze' : ''));
+
+      // 2. Pillar 1: Top 5 Inflow Leaders
+      const inflowTop5Html = byInflow.slice(0, 5).map((s, i) => {
+        const netSign = s.total_net >= 0 ? '+' : '';
+        const netColor = s.total_net >= 0 ? '#15803d' : '#b91c1c';
+        return `
+          <div class="rot-pillar-item">
+            <div class="rot-item-left">
+              <span class="rot-rank-num ${getRankClass(i+1)}">#${i+1}</span>
+              <span class="rot-item-name" title="${s.scheme_type}">${s.scheme_type}</span>
+            </div>
+            <div class="rot-item-right">
+              <div class="rot-item-val" style="color:#0284c7;">${formatCr(s.total_gross)}</div>
+              <div class="rot-item-sub" style="color:${netColor}; font-weight:700;">Net: ${netSign}${formatCr(s.total_net)}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // 3. Pillar 2: Top 5 SIP Book Leaders
+      const sipTop5Html = bySip.slice(0, 5).map((s, i) => {
+        return `
+          <div class="rot-pillar-item">
+            <div class="rot-item-left">
+              <span class="rot-rank-num ${getRankClass(i+1)}">#${i+1}</span>
+              <span class="rot-item-name" title="${s.scheme_type}">${s.scheme_type}</span>
+            </div>
+            <div class="rot-item-right">
+              <div class="rot-item-val" style="color:#15803d;">₹${(s.latest_sip||0).toFixed(1)} Cr/mo</div>
+              <div class="rot-item-sub">${s.asset_class}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // 4. Pillar 3: Top 5 Closing AUM Champions
+      const aumTop5Html = byAum.slice(0, 5).map((s, i) => {
+        return `
+          <div class="rot-pillar-item">
+            <div class="rot-item-left">
+              <span class="rot-rank-num ${getRankClass(i+1)}">#${i+1}</span>
+              <span class="rot-item-name" title="${s.scheme_type}">${s.scheme_type}</span>
+            </div>
+            <div class="rot-item-right">
+              <div class="rot-item-val" style="color:#0f172a;">${formatAum(s.latest_aum)}</div>
+              <div class="rot-item-sub">${s.asset_class}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // 5. Sorted list for Master Table based on currentRotationSort
+      let displaySchemes = [...schemes];
+      if (currentRotationSort === 'inflow') {
+        displaySchemes = byInflow;
+      } else if (currentRotationSort === 'sip') {
+        displaySchemes = bySip;
+      } else if (currentRotationSort === 'aum') {
+        displaySchemes = byAum;
+      } else { // default 'net'
+        displaySchemes = byNet;
+      }
+
+      const rowsHtml = displaySchemes.map((s, idx) => {
+        const infR = inflowRankMap[s.scheme_type] || '-';
+        const sipR = sipRankMap[s.scheme_type] || '-';
+        const aumR = aumRankMap[s.scheme_type] || '-';
+
+        const netSign = s.total_net >= 0 ? '+' : '';
+        const netColor = s.total_net >= 0 ? '#15803d' : '#b91c1c';
+
+        // Strategic Character Determination
+        let charBadge = '';
+        if (aumR <= 3 && sipR <= 3) {
+          charBadge = `<span class="char-badge anchor" title="Dominates both SIP retention and overall wealth base">👑 Core Wealth Anchor</span>`;
+        } else if (sipR <= 5 && infR > 5) {
+          const rankGain = infR - sipR;
+          charBadge = `<span class="char-badge sip-surge" title="High organic retail investor loyalty">⚡ SIP Surge (+${rankGain} Ranks)</span>`;
+        } else if (infR <= 3 && sipR > 10) {
+          const rankDrop = sipR - infR;
+          charBadge = `<span class="char-badge churn" title="Massive gross volume with negligible retail stickiness">⚠️ Treasury Churn (-${rankDrop} SIP)</span>`;
+        } else if (s.total_net < 0) {
+          charBadge = `<span class="char-badge churn" title="Outflows exceeding fresh money">🔴 Capital Drain</span>`;
+        } else if (s.total_net >= 2500) {
+          charBadge = `<span class="char-badge accum" title="Substantial positive capital absorption">🚀 Net Accumulator</span>`;
+        } else {
+          charBadge = `<span class="char-badge steady">🟢 Steady Flow</span>`;
+        }
+
+        return `
+          <tr>
+            <td class="t-center" style="font-weight:800; color:#64748b; font-family:'JetBrains Mono',monospace;">#${idx + 1}</td>
+            <td>
+              <div style="font-weight:700; color:#0f172a;">${s.scheme_type}</div>
+              <div style="font-size:0.66rem; color:#64748b;">${s.asset_class}</div>
+            </td>
+            <td>
+              <div class="triple-rank-wrap">
+                <span class="t-rank-pill inflow" title="Inflow Rank">Inflow #${infR}</span>
+                <span class="t-rank-pill sip" title="SIP Book Rank">SIP #${sipR}</span>
+                <span class="t-rank-pill aum" title="AUM Rank">AUM #${aumR}</span>
+              </div>
+            </td>
+            <td class="t-right" style="font-weight:700; color:#0369a1;">₹${(s.total_gross||0).toFixed(2)} Cr</td>
+            <td class="t-right">
+              <span style="font-weight:800; color:${netColor};">${netSign}₹${(s.total_net||0).toFixed(2)} Cr</span>
+              <div style="font-size:0.62rem; color:${netColor}; font-weight:700;">${s.retention_pct || 0}% Retained</div>
+            </td>
+            <td class="t-right" style="font-weight:700; color:#15803d;">₹${(s.latest_sip||0).toFixed(2)} Cr/mo</td>
+            <td class="t-right" style="font-weight:700; color:#0f172a;">${formatAum(s.latest_aum||0)}</td>
+            <td class="t-center">${charBadge}</td>
+          </tr>
+        `;
+      }).join('');
+
+      wrap.innerHTML = `
+        <!-- 1. 3-Pillar Parallel Leaderboards -->
+        <div class="rotation-pillars-grid">
+          <!-- Pillar 1: Inflow Leaders -->
+          <div class="rot-pillar-card inflow-pillar">
+            <div class="rot-pillar-header">
+              <div>
+                <span class="rot-pillar-title">🌊 Inflow Volume Leaders</span>
+                <div class="rot-pillar-sub">${data.horizon} Total Inflow Gross</div>
+              </div>
+              <span class="rot-pillar-badge blue">Turnover</span>
+            </div>
+            <div class="rot-pillar-list">
+              ${inflowTop5Html}
+            </div>
+          </div>
+
+          <!-- Pillar 2: SIP Book Leaders -->
+          <div class="rot-pillar-card sip-pillar">
+            <div class="rot-pillar-header">
+              <div>
+                <span class="rot-pillar-title">⚡ SIP Run-Rate Leaders</span>
+                <div class="rot-pillar-sub">Monthly Compounding Flow</div>
+              </div>
+              <span class="rot-pillar-badge green">Sticky</span>
+            </div>
+            <div class="rot-pillar-list">
+              ${sipTop5Html}
+            </div>
+          </div>
+
+          <!-- Pillar 3: Closing AUM Leaders -->
+          <div class="rot-pillar-card aum-pillar">
+            <div class="rot-pillar-header">
+              <div>
+                <span class="rot-pillar-title">🏦 Closing AUM Giants</span>
+                <div class="rot-pillar-sub">Accumulated Asset Base</div>
+              </div>
+              <span class="rot-pillar-badge dark">Wealth</span>
+            </div>
+            <div class="rot-pillar-list">
+              ${aumTop5Html}
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Controls & Sort Switcher -->
+        <div class="rot-controls-bar">
+          <div>
+            <div class="rot-controls-title">Strategic Category Rotation & Position Ledger</div>
+            <div style="font-size:0.66rem; color:#64748b;">Compare Inflow Rank vs SIP Rank vs AUM Rank to detect disconnects and capital migration</div>
+          </div>
+          <div class="rot-sort-group">
+            <span class="rot-sort-label">Sort By:</span>
+            <button class="rot-sort-btn ${currentRotationSort === 'net' ? 'active' : ''}" onclick="setRotationSort('net')">🏆 Net Retained</button>
+            <button class="rot-sort-btn ${currentRotationSort === 'sip' ? 'active' : ''}" onclick="setRotationSort('sip')">⚡ SIP Book</button>
+            <button class="rot-sort-btn ${currentRotationSort === 'aum' ? 'active' : ''}" onclick="setRotationSort('aum')">🏦 Closing AUM</button>
+            <button class="rot-sort-btn ${currentRotationSort === 'inflow' ? 'active' : ''}" onclick="setRotationSort('inflow')">🌊 Gross Inflow</button>
+          </div>
+        </div>
+
+        <!-- 3. Master Rotation Table with Triple-Rank Profile -->
+        <div class="cockpit-table-container" style="margin-top:8px;">
+          <table class="cockpit-table">
+            <thead>
+              <tr>
+                <th class="t-center" style="width:36px;">#</th>
+                <th>Scheme Category & Class</th>
+                <th style="width:145px;">Triple-Rank</th>
+                <th class="t-right">Gross Inflow</th>
+                <th class="t-right">Net Absorbed</th>
+                <th class="t-right">Monthly SIP</th>
+                <th class="t-right">Closing AUM</th>
+                <th class="t-center">Strategic Signal</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+        </div>
+      `;
     }
