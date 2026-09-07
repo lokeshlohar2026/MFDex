@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>India MFD Business Doppler Radar (Live SQLite)</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <header>
+    <div class="brand-section">
+      <div class="pulse-dot"></div>
+      <div class="brand-title">INDIA MFD BUSINESS RADAR</div>
+      <div class="badge-sqlite">Live SQLite</div>
+    </div>
+
+    <!-- Top KPI Strip -->
+    <div class="top-kpis">
+      <div class="top-kpi-item">
+        <span class="top-kpi-label">Nat AUM</span>
+        <span class="top-kpi-val" id="topNatAum">₹14.66 L Cr</span>
+      </div>
+      <div class="top-kpi-item">
+        <span class="top-kpi-label">Gross Inflows</span>
+        <span class="top-kpi-val blue" id="topNatGross">₹45,952 Cr</span>
+      </div>
+      <div class="top-kpi-item">
+        <span class="top-kpi-label">Total Outflows</span>
+        <span class="top-kpi-val" id="topNatOutflows">₹45,354 Cr</span>
+      </div>
+      <div class="top-kpi-item">
+        <span class="top-kpi-label">Net Added</span>
+        <span class="top-kpi-val green" id="topNatNet">+₹598 Cr</span>
+      </div>
+      <div class="top-kpi-item">
+        <span class="top-kpi-label">Running SIP</span>
+        <span class="top-kpi-val" id="topNatSip">₹7,505 Cr/mo</span>
+      </div>
+      <div class="top-kpi-item">
+        <span class="top-kpi-label">Active MFDs</span>
+        <span class="top-kpi-val" id="topNatMfds">99,743</span>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <label style="font-size:0.75rem; font-weight:700; color:#64748b;">MONTH:</label>
+      <select id="monthSelect" onchange="onMonthChange()">
+        <option value="Jun-26" selected>Jun 2026 (Current)</option>
+        <option value="Jul-26">Jul 2026</option>
+      </select>
+      <input type="text" id="searchInput" class="search-box" placeholder="Search 6-digit PIN..." maxlength="6" onkeydown="if(event.key==='Enter') searchPincode()" onchange="searchPincode()">
+      <button onclick="searchPincode()" style="background:#2563eb; color:#fff; border:none; padding:6px 10px; border-radius:6px; font-weight:700; font-size:0.8rem; cursor:pointer;">Search</button>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <div id="loader">⚡ Querying SQLite...</div>
+    
+    <div class="breadcrumb-bar" id="breadcrumbBar">
+      <button class="back-btn" id="backBtn" onclick="resetToNational()">← All India</button>
+      <span id="breadcrumbText">All India Front</span>
+    </div>
+
+    <div id="map"></div>
+
+    <!-- Doppler Floating Legend -->
+    <div class="radar-legend">
+      <div class="legend-title">Doppler Business Inflow Intensity</div>
+      <div class="legend-bar"></div>
+      <div class="legend-labels">
+        <span>Low Inflow</span>
+        <span>Moderate</span>
+        <span>High Inflow</span>
+      </div>
+      <div class="control-row">
+        <span>View</span>
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="btnMapCanvas" onclick="setBasemap('canvas')">Canvas</button>
+          <button class="mode-btn" id="btnMapContour" onclick="setBasemap('contour')">Contour</button>
+          <button class="mode-btn" id="btnMapSatellite" onclick="setBasemap('satellite')">Satellite</button>
+        </div>
+      </div>
+      <div class="control-row">
+        <span>Clarity</span>
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="btnCrisp" onclick="setHeatMode('crisp')">Crisp</button>
+          <button class="mode-btn" id="btnSoft" onclick="setHeatMode('soft')">Soft</button>
+          <button class="mode-btn" id="btnOff" onclick="setHeatMode('off')">Off</button>
+        </div>
+      </div>
+      <div class="control-row">
+        <span>Opacity</span>
+        <input type="range" min="0.1" max="1.0" step="0.05" value="0.85" style="width:100px;" oninput="setHeatOpacity(this.value)">
+      </div>
+    </div>
+
+    <!-- Sidebar Inspector -->
+    <div class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <span class="side-tag" id="sideTierTag">National Front</span>
+        <div class="side-title" id="sideTitle">All India Universe</div>
+        <div class="side-subtitle" id="sideSubtitle">Verified Independent MFD & RIA Telemetry</div>
+      </div>
+
+      <!-- Hero Net Added Card -->
+      <div class="hero-card">
+        <div class="hero-label">Net New Business Retained in Month</div>
+        <div class="hero-val" id="sideNet">+₹8.70 Cr</div>
+        <div class="hero-strip">
+          <span id="sideGross">Gross Inflow: ₹28.04 Cr</span>
+          <span id="sideOutflow">Total Outflow: ₹19.34 Cr</span>
+          <span id="sideRetention" style="font-weight:700;">Retention: 31.0%</span>
+        </div>
+      </div>
+
+      <!-- 4-Tile Performance Grid -->
+      <div class="metric-grid">
+        <div class="m-card">
+          <div class="m-title">Monthly SIP Harvest</div>
+          <div class="m-val" id="sideSip">₹11.16 Cr</div>
+          <div class="m-sub" id="sideSipCount">29,641 Debits</div>
+        </div>
+        <div class="m-card">
+          <div class="m-title">Avg Monthly SIP Ticket</div>
+          <div class="m-val" id="sideAvgTicket">₹3,765</div>
+          <div class="m-sub">per investor debit</div>
+        </div>
+        <div class="m-card">
+          <div class="m-title">Closing AUM Balance</div>
+          <div class="m-val" id="sideAum">₹2,217 Cr</div>
+          <div class="m-sub">Snapshot Wealth</div>
+        </div>
+        <div class="m-card">
+          <div class="m-title">Active MFD Density</div>
+          <div class="m-val" id="sideMfds">150 MFDs</div>
+          <div class="m-sub">competing advisors</div>
+        </div>
+      </div>
+
+      <!-- Asset Class Stacked Bar -->
+      <div class="asset-mix-box">
+        <div class="asset-mix-title">
+          <span>Asset Class Mix</span>
+          <span id="mixDetail">Equity: 67% | Hybrid: 20% | Debt: 4% | Liquid: 4% | Passive: 5%</span>
+        </div>
+        <div class="stacked-bar">
+          <div class="bar-seg seg-eq" id="barEq" style="width: 67%;"></div>
+          <div class="bar-seg seg-hy" id="barHy" style="width: 20%;"></div>
+          <div class="bar-seg seg-pa" id="barPa" style="width: 5%;"></div>
+          <div class="bar-seg seg-db" id="barDb" style="width: 4%;"></div>
+          <div class="bar-seg seg-lq" id="barLq" style="width: 4%;"></div>
+        </div>
+        <div class="mix-legend">
+          <span><span class="mix-dot seg-eq"></span>Equity</span>
+          <span><span class="mix-dot seg-hy"></span>Hybrid</span>
+          <span><span class="mix-dot seg-pa"></span>Passive</span>
+          <span><span class="mix-dot seg-db"></span>Debt</span>
+          <span><span class="mix-dot seg-lq"></span>Liquid</span>
+        </div>
+      </div>
+
+      <!-- Schemes Section -->
+      <div class="section-head">
+        <span class="section-title">Top Scheme Categories</span>
+        <div class="toggle-group">
+          <button class="t-btn active" id="tabGross" onclick="setSchemeTab('gross')">Inflows</button>
+          <button class="t-btn" id="tabSip" onclick="setSchemeTab('sip')">SIP Book</button>
+          <button class="t-btn" id="tabAum" onclick="setSchemeTab('aum')">AUM</button>
+        </div>
+      </div>
+
+      <div class="scheme-list" id="schemeContainer">
+        <!-- Dynamically rendered scheme items -->
+      </div>
+    </div>
+  </div>
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>

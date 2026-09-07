@@ -1,0 +1,49 @@
+﻿# Virtual Environment
+.venv/
+env/
+venv/
+ENV/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Large Datasets & SQLite Caches (>50MB-600MB)
+*.sqlite
+*.sqlite3
+*.db
+*.sqlite-shm
+*.sqlite-wal
+*.parquet
+*.csv
+*.xlsx
+*.xls
+geo_cube.json
+India_MFD_Business_Heatmap.html
+india_states.geojson
+
+# Outputs & Scratch Dirs
+downloads/
+logs/
+bangalore_analysis_output/
+mumbai_analysis_output/
+top_metros_analysis_output/
+user_data/
+Data/
+distributor_reports/
+test_*.png
+
+# OS / Editor junk
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+.env
+.env.*
+*.key
+*.pem
