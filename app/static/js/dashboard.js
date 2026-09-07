@@ -144,6 +144,16 @@
       if (!s) return;
       document.getElementById('topNatAum').innerText = `₹${(s.nat_aum/100000).toFixed(2)} L Cr`;
       document.getElementById('topNatGross').innerText = `₹${Math.round(s.nat_gross).toLocaleString()} Cr`;
+
+      const gross = s.nat_gross || 0;
+      const sip = s.nat_sip || 0;
+      const stp = s.nat_stp || 0;
+      const lumpsum = Math.max(0, gross - sip - stp);
+      const breakdownEl = document.getElementById('topNatInflowBreakdown');
+      if (breakdownEl) {
+        breakdownEl.innerText = `Lump: ₹${Math.round(lumpsum).toLocaleString()} Cr | SIP: ₹${Math.round(sip).toLocaleString()} Cr | STP: ₹${Math.round(stp).toLocaleString()} Cr`;
+      }
+
       document.getElementById('topNatOutflows').innerText = `₹${Math.round(s.nat_outflow).toLocaleString()} Cr`;
       const netSign = s.nat_net >= 0 ? '+' : '';
       document.getElementById('topNatNet').innerText = `${netSign}₹${Math.round(s.nat_net).toLocaleString()} Cr`;

@@ -1,4 +1,4 @@
-﻿import os
+import os
 from typing import Dict, List, Any, Optional
 from app.database import get_db_connection
 from app.config import STATE_GEOJSON, DISTRICT_GEOJSON
@@ -42,6 +42,7 @@ def get_national_summary(month: str) -> Dict[str, Any]:
                 ROUND(SUM(total_redemptions_cr), 2) as nat_outflow,
                 ROUND(SUM(total_net_added_cr), 2) as nat_net,
                 ROUND(SUM(total_sip_cr), 2) as nat_sip,
+                ROUND(SUM(total_stp_cr), 2) as nat_stp,
                 SUM(total_sip_count) as nat_sip_cnt,
                 ROUND(CASE WHEN SUM(total_sip_count) > 0 THEN SUM(total_sip_cr)*10000000.0 / SUM(total_sip_count) ELSE 0 END, 2) as avg_sip_ticket,
                 SUM(active_mfds) as nat_mfds_footprint
@@ -58,6 +59,7 @@ def get_national_summary(month: str) -> Dict[str, Any]:
                 ROUND(SUM(redemptions_cr), 2) as redemptions_cr,
                 ROUND(SUM(net_added_cr), 2) as net_added_cr,
                 ROUND(SUM(active_sip_cr), 2) as active_sip_cr,
+                ROUND(SUM(active_stp_cr), 2) as active_stp_cr,
                 SUM(active_sip_count) as active_sip_count,
                 ROUND(CASE WHEN SUM(active_sip_count) > 0 THEN (SUM(active_sip_cr)*10000000.0)/SUM(active_sip_count) ELSE 0 END, 2) as avg_sip_ticket_inr,
                 SUM(active_mfds) as active_mfds
@@ -109,6 +111,7 @@ def get_state_details(month: str, state: str) -> Dict[str, Any]:
                 ROUND(SUM(total_redemptions_cr), 2) as total_redemptions_cr,
                 ROUND(SUM(total_net_added_cr), 2) as total_net_added_cr,
                 ROUND(SUM(total_sip_cr), 2) as total_sip_cr,
+                ROUND(SUM(total_stp_cr), 2) as total_stp_cr,
                 SUM(total_sip_count) as total_sip_count,
                 ROUND(CASE WHEN SUM(total_sip_count) > 0 THEN (SUM(total_sip_cr)*10000000.0)/SUM(total_sip_count) ELSE 0 END, 2) as avg_sip_ticket_inr,
                 SUM(active_mfds) as active_mfds,
@@ -127,6 +130,7 @@ def get_state_details(month: str, state: str) -> Dict[str, Any]:
                 ROUND(SUM(redemptions_cr), 2) as redemptions_cr,
                 ROUND(SUM(net_added_cr), 2) as net_added_cr,
                 ROUND(SUM(active_sip_cr), 2) as active_sip_cr,
+                ROUND(SUM(active_stp_cr), 2) as active_stp_cr,
                 SUM(active_sip_count) as active_sip_count,
                 ROUND(CASE WHEN SUM(active_sip_count) > 0 THEN (SUM(active_sip_cr)*10000000.0)/SUM(active_sip_count) ELSE 0 END, 2) as avg_sip_ticket_inr,
                 SUM(active_mfds) as active_mfds
@@ -165,6 +169,7 @@ def get_district_details(month: str, district: str, state: Optional[str] = None)
                 ROUND(SUM(redemptions_cr), 2) as redemptions_cr,
                 ROUND(SUM(net_added_cr), 2) as net_added_cr,
                 ROUND(SUM(active_sip_cr), 2) as active_sip_cr,
+                ROUND(SUM(active_stp_cr), 2) as active_stp_cr,
                 SUM(active_sip_count) as active_sip_count,
                 ROUND(CASE WHEN SUM(active_sip_count) > 0 THEN (SUM(active_sip_cr)*10000000.0)/SUM(active_sip_count) ELSE 0 END, 2) as avg_sip_ticket_inr,
                 SUM(active_mfds) as active_mfds

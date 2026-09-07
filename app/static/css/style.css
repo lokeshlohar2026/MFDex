@@ -34,6 +34,7 @@
     .top-kpi-val { font-size: 0.85rem; font-weight: 800; color: #0f172a; font-family: 'JetBrains Mono', monospace; }
     .top-kpi-val.green { color: #166534; }
     .top-kpi-val.blue { color: #0284c7; }
+    .top-kpi-sub { font-size: 0.60rem; font-weight: 600; color: #64748b; font-family: 'JetBrains Mono', monospace; margin-top: 1px; white-space: nowrap; }
 
     .header-controls { display: flex; align-items: center; gap: 10px; }
     select, input {
