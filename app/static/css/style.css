@@ -154,6 +154,20 @@
       padding-top: 6px;
       margin-top: 6px;
     }
+    .hero-substrip {
+      font-size: 0.70rem;
+      color: #166534;
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 4px;
+      padding: 4px 8px;
+      margin-top: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid rgba(134, 239, 172, 0.6);
+    }
+    .hero-substrip b { color: #0f172a; }
 
     /* Metric Grid */
     .metric-grid {

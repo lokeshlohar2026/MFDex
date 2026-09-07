@@ -439,7 +439,7 @@
 
       renderMetricsToSidebar(
         sum.nat_net || 0, sum.nat_gross || 0, sum.nat_outflow || 0,
-        sum.nat_sip || 0, sum.nat_sip_cnt || 0, sum.avg_sip_ticket || 0,
+        sum.nat_sip || 0, sum.nat_stp || 0, sum.nat_sip_cnt || 0, sum.avg_sip_ticket || 0,
         sum.nat_aum || 0, sum.nat_mfds_footprint || 0, schemes
       );
     }
@@ -451,7 +451,7 @@
 
       renderMetricsToSidebar(
         sum.total_net_added_cr || 0, sum.total_gross_cr || 0, sum.total_redemptions_cr || 0,
-        sum.total_sip_cr || 0, sum.total_sip_count || 0, sum.avg_sip_ticket_inr || 0,
+        sum.total_sip_cr || 0, sum.total_stp_cr || 0, sum.total_sip_count || 0, sum.avg_sip_ticket_inr || 0,
         sum.total_aum_cr || 0, sum.active_mfds || 0, schemes
       );
     }
@@ -463,7 +463,7 @@
 
       renderMetricsToSidebar(
         sum.total_net_added_cr || 0, sum.total_gross_cr || 0, sum.total_redemptions_cr || 0,
-        sum.total_sip_cr || 0, sum.total_sip_count || 0, sum.avg_sip_ticket_inr || 0,
+        sum.total_sip_cr || 0, sum.total_stp_cr || 0, sum.total_sip_count || 0, sum.avg_sip_ticket_inr || 0,
         sum.total_aum_cr || 0, sum.total_mfds_footprint || 0, schemes
       );
     }
@@ -475,12 +475,12 @@
 
       renderMetricsToSidebar(
         sum.total_net_added_cr || 0, sum.total_gross_cr || 0, sum.total_redemptions_cr || 0,
-        sum.total_sip_cr || 0, sum.total_sip_count || 0, sum.avg_sip_ticket_inr || 0,
+        sum.total_sip_cr || 0, sum.total_stp_cr || 0, sum.total_sip_count || 0, sum.avg_sip_ticket_inr || 0,
         sum.total_aum_cr || 0, sum.active_mfds || 0, schemes
       );
     }
 
-    function renderMetricsToSidebar(net, gross, outflow, sip, sipCount, avgTicket, aum, mfds, schemes) {
+    function renderMetricsToSidebar(net, gross, outflow, sip, stp, sipCount, avgTicket, aum, mfds, schemes) {
       // Hero Card
       const netSign = net >= 0 ? '+' : '';
       document.getElementById('sideNet').innerText = `${netSign}₹${net.toFixed(2)} Cr`;
@@ -490,6 +490,13 @@
 
       const retPct = gross > 0 ? ((net / gross) * 100.0) : 0;
       document.getElementById('sideRetention').innerText = `Retention: ${retPct.toFixed(1)}%`;
+
+      // Inflow Sourcing Breakdown (Lumpsum | SIP | STP)
+      const lumpsum = Math.max(0, gross - sip - (stp || 0));
+      const breakdownEl = document.getElementById('sideInflowBreakdown');
+      if (breakdownEl) {
+        breakdownEl.innerHTML = `<span>Inflows: <b>Lump: ₹${lumpsum.toFixed(2)} Cr</b> | <b>SIP: ₹${sip.toFixed(2)} Cr</b> | <b>STP: ₹${(stp || 0).toFixed(2)} Cr</b></span>`;
+      }
 
       // 4 Tiles
       document.getElementById('sideSip').innerText = `₹${sip.toFixed(2)} Cr`;
