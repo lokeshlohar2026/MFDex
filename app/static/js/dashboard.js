@@ -1,45 +1,45 @@
-// Basemap Layers: Esri Light Gray Canvas, OpenStreetMap Contour / Street, and Esri Satellite
+// Basemap Layers: Google Maps JavaScript API (Roadmap, Hybrid Satellite, and Terrain with region=IN)
     const map = L.map('map', { zoomControl: true, minZoom: 4, maxZoom: 18 }).setView([22.5, 79.5], 5);
     
-    const lightCanvas = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 16,
-      attribution: 'Esri Light'
+    // 1. Google Roadmap (Default clean, crisp vector map with Survey of India boundary)
+    const googleRoadmap = L.gridLayer.googleMutant({
+      type: 'roadmap',
+      maxZoom: 20
     }).addTo(map);
 
-    const contourOsm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap contributors'
+    // 2. Google Satellite / Hybrid (High-res aerial imagery + road overlays)
+    const googleHybrid = L.gridLayer.googleMutant({
+      type: 'hybrid',
+      maxZoom: 20
     });
 
-    const satelliteImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 18,
-      attribution: 'Esri Satellite'
+    // 3. Google Terrain (Natural contours, elevations, and relief shading)
+    const googleTerrain = L.gridLayer.googleMutant({
+      type: 'terrain',
+      maxZoom: 20
     });
 
-    const satelliteLabels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 18,
-      attribution: 'Esri Reference'
-    });
-
-    const satelliteGroup = L.layerGroup([satelliteImagery, satelliteLabels]);
-
-    let currentBasemap = 'canvas';
+    let currentBasemap = 'roadmap';
     function setBasemap(mode) {
       currentBasemap = mode;
-      document.getElementById('btnMapCanvas').className = 'mode-btn ' + (mode === 'canvas' ? 'active' : '');
-      document.getElementById('btnMapContour').className = 'mode-btn ' + (mode === 'contour' ? 'active' : '');
-      document.getElementById('btnMapSatellite').className = 'mode-btn ' + (mode === 'satellite' ? 'active' : '');
+      const btnRoadmap = document.getElementById('btnMapRoadmap');
+      const btnSatellite = document.getElementById('btnMapSatellite');
+      const btnTerrain = document.getElementById('btnMapTerrain');
 
-      map.removeLayer(lightCanvas);
-      map.removeLayer(contourOsm);
-      map.removeLayer(satelliteGroup);
+      if (btnRoadmap) btnRoadmap.className = 'mode-btn ' + (mode === 'roadmap' ? 'active' : '');
+      if (btnSatellite) btnSatellite.className = 'mode-btn ' + (mode === 'hybrid' || mode === 'satellite' ? 'active' : '');
+      if (btnTerrain) btnTerrain.className = 'mode-btn ' + (mode === 'terrain' ? 'active' : '');
 
-      if (mode === 'contour') {
-        map.addLayer(contourOsm);
-      } else if (mode === 'satellite') {
-        map.addLayer(satelliteGroup);
+      map.removeLayer(googleRoadmap);
+      map.removeLayer(googleHybrid);
+      map.removeLayer(googleTerrain);
+
+      if (mode === 'hybrid' || mode === 'satellite') {
+        map.addLayer(googleHybrid);
+      } else if (mode === 'terrain') {
+        map.addLayer(googleTerrain);
       } else {
-        map.addLayer(lightCanvas);
+        map.addLayer(googleRoadmap);
       }
     }
 
@@ -48,8 +48,12 @@
     let districtGeojson = null;
     let stateLayer = null;
     let districtLayer = null;
+    let googlePolygonLayer = null;
     let pinDotsLayerGroup = L.layerGroup().addTo(map);
     let heatLayer = null;
+
+    // Helper: Update Polygon Source Badge (Disabled per user request for clean UI)
+    function updatePolygonBadge(source, message) {}
 
     // State Variables
     let currentMonth = 'Jun-26';
@@ -172,11 +176,11 @@
           const sName = feature.properties.state_name;
           const isSelected = (selectedState === sName);
           return {
-            fillColor: isSelected ? '#2563eb' : 'transparent',
-            weight: isSelected ? 2.5 : 1.2,
-            color: isSelected ? '#1d4ed8' : 'rgba(37, 99, 235, 0.45)',
-            dashArray: isSelected ? '' : '4, 4',
-            fillOpacity: isSelected ? 0.08 : 0
+            fillColor: isSelected ? '#ea4335' : 'transparent',
+            weight: isSelected ? 2.5 : 0, // Zero lines by default so Google's clean native borders show!
+            color: isSelected ? '#ea4335' : 'transparent',
+            dashArray: isSelected ? '4, 4' : '',
+            fillOpacity: isSelected ? 0.05 : 0
           };
         },
         onEachFeature: function(feature, layer) {
@@ -186,7 +190,7 @@
           if (sObj) {
             layer.bindTooltip(`
               <div style="font-family:'JetBrains Mono'; font-size:11px;">
-                <b style="color:#2563eb;font-size:12px;">${sName}</b><br/>
+                <b style="color:#ea4335;font-size:12px;">${sName}</b><br/>
                 Gross: <b>₹${sObj.gross_cr.toLocaleString()} Cr</b><br/>
                 Net: <b>${sObj.net_cr >= 0 ? '+' : ''}₹${sObj.net_cr.toLocaleString()} Cr</b><br/>
                 SIP: <b>₹${sObj.sip_cr.toLocaleString()} Cr</b><br/>
@@ -194,6 +198,28 @@
               </div>
             `, { sticky: true });
           }
+
+          layer.on('mouseover', function(e) {
+            if (selectedState !== sName) {
+              layer.setStyle({
+                weight: 2,
+                color: '#ea4335',
+                dashArray: '4, 4',
+                fillColor: '#ea4335',
+                fillOpacity: 0.04
+              });
+            }
+          });
+
+          layer.on('mouseout', function(e) {
+            if (selectedState !== sName) {
+              layer.setStyle({
+                weight: 0,
+                color: 'transparent',
+                fillOpacity: 0
+              });
+            }
+          });
 
           layer.on('click', function(e) {
             L.DomEvent.stopPropagation(e);
@@ -228,36 +254,73 @@
         },
         style: function(feature) {
           const dName = feature.properties.district || '';
-          const isSelected = (selectedDistrict === dName);
+          const isSelected = (selectedDistrict === dName) || 
+            (selectedDistrict === 'Mumbai' && (dName === 'Mumbai' || dName === 'Mumbai Suburban' || dName === 'Mumbai City' || dName === 'Greater Bombay'));
           return {
-            fillColor: isSelected ? '#7c3aed' : 'transparent',
-            weight: isSelected ? 2.5 : 1.0,
-            color: isSelected ? '#7c3aed' : 'rgba(124, 58, 237, 0.45)',
-            dashArray: isSelected ? '' : '2, 3',
-            fillOpacity: isSelected ? 0.12 : 0
+            fillColor: isSelected ? '#ea4335' : 'transparent',
+            weight: isSelected ? 2.5 : 0.8,
+            color: isSelected ? '#ea4335' : 'rgba(100, 116, 139, 0.35)',
+            dashArray: isSelected ? '4, 4' : '2, 3',
+            fillOpacity: isSelected ? 0.08 : 0
           };
         },
         onEachFeature: function(feature, layer) {
           const dName = feature.properties.district || '';
+          const displayName = (dName === 'Mumbai Suburban' || dName === 'Mumbai City' || dName === 'Greater Bombay') ? 'Mumbai' : dName;
           layer.bindTooltip(`
             <div style="font-family:'JetBrains Mono'; font-size:11px;">
-              <b style="color:#7c3aed;font-size:12px;">🏙️ ${dName}</b><br/>
+              <b style="color:#ea4335;font-size:12px;">🏙️ ${displayName}</b><br/>
               <span style="color:#64748b;font-size:10px;">Click to inspect district micro-market</span>
             </div>
           `, { sticky: true });
 
+          layer.on('mouseover', function(e) {
+            const isSel = (selectedDistrict === dName) || 
+              (selectedDistrict === 'Mumbai' && (dName === 'Mumbai' || dName === 'Mumbai Suburban' || dName === 'Mumbai City' || dName === 'Greater Bombay'));
+            if (!isSel) {
+              layer.setStyle({
+                weight: 2,
+                color: '#ea4335',
+                dashArray: '4, 4',
+                fillOpacity: 0.04
+              });
+            }
+          });
+
+          layer.on('mouseout', function(e) {
+            const isSel = (selectedDistrict === dName) || 
+              (selectedDistrict === 'Mumbai' && (dName === 'Mumbai' || dName === 'Mumbai Suburban' || dName === 'Mumbai City' || dName === 'Greater Bombay'));
+            if (!isSel) {
+              layer.setStyle({
+                weight: 0.8,
+                color: 'rgba(100, 116, 139, 0.35)',
+                dashArray: '2, 3',
+                fillOpacity: 0
+              });
+            }
+          });
+
           layer.on('click', function(e) {
             L.DomEvent.stopPropagation(e);
-            drillDownToDistrict(dName, selectedState, layer.getBounds());
+            const targetDist = (dName === 'Mumbai Suburban' || dName === 'Mumbai City' || dName === 'Greater Bombay') ? 'Mumbai' : dName;
+            drillDownToDistrict(targetDist, selectedState, layer.getBounds());
           });
         }
       }).addTo(map);
     }
 
     async function drillDownToDistrict(districtName, stateName, bounds) {
+      if (districtName === 'Mumbai Suburban' || districtName === 'Mumbai City' || districtName === 'Greater Bombay') {
+        districtName = 'Mumbai';
+      }
       selectedDistrict = districtName;
       selectedPincode = null;
       document.getElementById('breadcrumbText').innerText = `All India > ${stateName} > ${districtName}`;
+      updatePolygonBadge('local_dataset');
+      if (googlePolygonLayer) {
+        map.removeLayer(googlePolygonLayer);
+        googlePolygonLayer = null;
+      }
       if (bounds) map.fitBounds(bounds, { padding: [20, 20] });
 
       renderDistrictPolygons();
@@ -461,7 +524,11 @@
 
     function renderSidebarDistrict(sum, schemes) {
       document.getElementById('sideTierTag').innerText = "District Market Tier";
-      document.getElementById('sideTitle').innerText = sum.district;
+      let displayName = selectedDistrict || sum.district || 'District';
+      if (displayName === 'Greater Bombay' || displayName === 'Mumbai Suburban' || displayName === 'Mumbai City') {
+        displayName = 'Mumbai';
+      }
+      document.getElementById('sideTitle').innerText = displayName;
       document.getElementById('sideSubtitle').innerText = `District in ${sum.state} (${sum.pincodes_count || 0} PINs)`;
 
       renderMetricsToSidebar(
@@ -474,7 +541,11 @@
     function renderSidebarPincode(sum, schemes) {
       document.getElementById('sideTierTag').innerText = "Micro-Market Pincode";
       document.getElementById('sideTitle').innerText = `PIN ${sum.pincode}`;
-      document.getElementById('sideSubtitle').innerText = `${sum.city || 'City'}, ${sum.state} (${sum.district || 'District'})`;
+      let distName = sum.district || 'District';
+      if (distName === 'Greater Bombay' || distName === 'Mumbai Suburban' || distName === 'Mumbai City') {
+        distName = 'Mumbai';
+      }
+      document.getElementById('sideSubtitle').innerText = `${sum.city || 'City'}, ${sum.state} (${distName})`;
 
       renderMetricsToSidebar(
         sum.total_net_added_cr || 0, sum.total_gross_cr || 0, sum.total_redemptions_cr || 0,
@@ -618,26 +689,181 @@
       selectedPincode = null;
       document.getElementById('backBtn').style.display = 'none';
       document.getElementById('breadcrumbText').innerText = "All India Front";
+      updatePolygonBadge(null);
       map.setView([22.5, 79.5], 5);
       renderStatePolygons();
       if (districtLayer) map.removeLayer(districtLayer);
+      if (googlePolygonLayer) {
+        map.removeLayer(googlePolygonLayer);
+        googlePolygonLayer = null;
+      }
       renderHeatAndPins();
       loadMonthData();
     }
 
+    // =========================================================================
+    // SMART BOUNDARY ENGINE: GOOGLE EXACT POLYGON VS SQUARE BOUNDARY DETECTION
+    // =========================================================================
+
+    // 1. Detect whether a geometry or coordinate set represents a square/rectangular box
+    function isSquareOrBoundingBox(geom) {
+      if (!geom) return true;
+
+      // Google LatLngBounds instance
+      if (typeof geom.getNorthEast === 'function' && typeof geom.getSouthWest === 'function') {
+        return true; // Any LatLngBounds is inherently a rectangular bounding box / square
+      }
+
+      let points = [];
+      if (Array.isArray(geom)) {
+        if (Array.isArray(geom[0]) && Array.isArray(geom[0][0])) {
+          points = geom[0]; // outer ring
+        } else if (Array.isArray(geom[0])) {
+          points = geom;
+        }
+      } else if (geom.coordinates && Array.isArray(geom.coordinates)) {
+        let c = geom.coordinates;
+        if (Array.isArray(c[0]) && Array.isArray(c[0][0])) c = c[0];
+        points = c;
+      } else if (typeof geom.getPath === 'function') {
+        const path = geom.getPath();
+        for (let i = 0; i < path.getLength(); i++) {
+          const pt = path.getAt(i);
+          points.push([pt.lat(), pt.lng()]);
+        }
+      }
+
+      if (!points || points.length === 0) return true;
+
+      // Check vertex count and axis-alignment
+      if (points.length <= 5) {
+        const lats = new Set();
+        const lngs = new Set();
+        for (const pt of points) {
+          let lat = null, lng = null;
+          if (typeof pt.lat === 'function') {
+            lat = pt.lat();
+            lng = pt.lng();
+          } else if (Array.isArray(pt)) {
+            lat = pt[1];
+            lng = pt[0];
+          } else if (pt && pt.lat !== undefined && pt.lng !== undefined) {
+            lat = pt.lat;
+            lng = pt.lng;
+          }
+          if (lat !== null && lng !== null) {
+            lats.add(Math.round(lat * 10000) / 10000);
+            lngs.add(Math.round(lng * 10000) / 10000);
+          }
+        }
+        if (lats.size <= 2 && lngs.size <= 2) {
+          return true; // Exact axis-aligned rectangle / square
+        }
+        return true; // Bounding box quad
+      }
+
+      // > 5 vertices with natural geographic variations = exact irregular polygon
+      return false;
+    }
+
+    // 2. Query Google Geocoding API
+    function queryGoogleGeocode(address) {
+      return new Promise((resolve) => {
+        if (!window.google || !google.maps || !google.maps.Geocoder) {
+          return resolve(null);
+        }
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ address: address, componentRestrictions: { country: 'IN' } }, (results, status) => {
+          if (status === 'OK' && results && results.length > 0) {
+            resolve(results[0]);
+          } else {
+            resolve(null);
+          }
+        });
+      });
+    }
+
+    // 3. Extract exact polygon if Google provides one
+    function extractGoogleExactPolygon(gRes) {
+      if (!gRes || !gRes.geometry) return null;
+      let candidate = null;
+      if (gRes.geometry.polygon) candidate = gRes.geometry.polygon;
+      else if (gRes.geometry.coordinates) candidate = gRes.geometry.coordinates;
+      else if (gRes.geometry.geojson) candidate = gRes.geometry.geojson;
+      else if (gRes.geometry.paths) candidate = gRes.geometry.paths;
+
+      if (candidate && !isSquareOrBoundingBox(candidate)) {
+        return candidate;
+      }
+      return null;
+    }
+
+    // 4. Match query / Google address components to verified local 2024 LGD dataset
+    function findMatchedDistrict(qLower, gRes) {
+      if (!districtGeojson || !districtGeojson.features) return null;
+
+      const candidates = [qLower];
+      if (gRes && gRes.address_components) {
+        for (const c of gRes.address_components) {
+          candidates.push(c.long_name.toLowerCase());
+          candidates.push(c.short_name.toLowerCase());
+        }
+      }
+
+      const isMumbaiQuery = candidates.some(c => 
+        c.includes('mumbai') || c.includes('bombay') || c.includes('bandra') || 
+        c.includes('andheri') || c.includes('colaba') || c.includes('dadar') || 
+        c.includes('borivali') || c.includes('kurla') || c.includes('worli')
+      );
+
+      for (const f of districtGeojson.features) {
+        const d = (f.properties.district || '').toLowerCase();
+        if (isMumbaiQuery && d.includes('mumbai')) {
+          return {
+            district: f.properties.district,
+            state: f.properties.state,
+            feature: f
+          };
+        }
+        for (const c of candidates) {
+          if (d === c || (c.length > 3 && (d.includes(c) || c.includes(d)))) {
+            return {
+              district: f.properties.district,
+              state: f.properties.state,
+              feature: f
+            };
+          }
+        }
+      }
+      return null;
+    }
+
     async function searchPincode() {
-      const pin = document.getElementById('searchInput').value.trim();
-      if (pin.length === 6 && !isNaN(pin)) {
+      const query = document.getElementById('searchInput').value.trim();
+      if (!query) return;
+
+      // 1. If 6-digit postal PIN
+      if (query.length === 6 && !isNaN(query)) {
         showLoader(true);
         try {
-          const res = await fetch(`/api/pincode_details?month=${currentMonth}&pincode=${pin}`);
+          const res = await fetch(`/api/pincode_details?month=${currentMonth}&pincode=${query}`);
           const data = await res.json();
           if (data.summary) {
-            selectedPincode = pin;
+            selectedPincode = query;
             selectedState = data.summary.state;
-            selectedDistrict = data.summary.district;
+            let d = data.summary.district || 'District';
+            if (d === 'Greater Bombay' || d === 'Mumbai Suburban' || d === 'Mumbai City') {
+              d = 'Mumbai';
+            }
+            selectedDistrict = d;
             document.getElementById('backBtn').style.display = 'block';
-            document.getElementById('breadcrumbText').innerText = `All India > ${selectedState} > ${selectedDistrict} > PIN ${pin}`;
+            document.getElementById('breadcrumbText').innerText = `All India > ${selectedState} > ${selectedDistrict} > PIN ${query}`;
+            updatePolygonBadge('local_dataset');
+
+            if (googlePolygonLayer) {
+              map.removeLayer(googlePolygonLayer);
+              googlePolygonLayer = null;
+            }
 
             if (data.summary.lat && data.summary.lon) {
               map.setView([data.summary.lat, data.summary.lon], 12);
@@ -647,15 +873,115 @@
             await renderHeatAndPins();
             renderSidebarPincode(data.summary, data.schemes);
           } else {
-            alert(`PIN ${pin} not found in verified database for ${currentMonth}.`);
+            alert(`PIN ${query} not found in verified database for ${currentMonth}.`);
           }
         } catch (e) {
           console.error("Search error:", e);
         } finally {
           showLoader(false);
         }
-      } else {
-        alert("Please enter a valid 6-digit postal PIN code.");
+        return;
+      }
+
+      // 2. City / District / Area Name: Smart Check
+      // RULE: If Google has exact polygon shape -> show it!
+      //       If Google is about to show square -> check our dataset and show our polygon!
+      showLoader(true);
+      try {
+        const qLower = query.toLowerCase();
+
+        // Query Google Geocoding first
+        const gRes = await queryGoogleGeocode(query);
+        const googleExactPoly = extractGoogleExactPolygon(gRes);
+
+        // CASE A: Google has an exact irregular polygon shape!
+        if (googleExactPoly) {
+          console.log("[Smart Boundary Engine] Google provided exact polygon shape:", googleExactPoly);
+          if (googlePolygonLayer) map.removeLayer(googlePolygonLayer);
+          googlePolygonLayer = L.geoJson(googleExactPoly, {
+            style: {
+              fillColor: '#ea4335',
+              weight: 2.5,
+              color: '#ea4335',
+              dashArray: '4, 4',
+              fillOpacity: 0.08
+            }
+          }).addTo(map);
+
+          updatePolygonBadge('google_exact', gRes.formatted_address || query);
+          map.fitBounds(googlePolygonLayer.getBounds(), { padding: [25, 25] });
+          document.getElementById('backBtn').style.display = 'block';
+          document.getElementById('breadcrumbText').innerText = `All India > ${gRes.formatted_address || query}`;
+          
+          const matchedD = findMatchedDistrict(qLower, gRes);
+          if (matchedD) {
+            let d = matchedD.district;
+            if (d === 'Greater Bombay' || d === 'Mumbai Suburban' || d === 'Mumbai City') {
+              d = 'Mumbai';
+            }
+            selectedDistrict = d;
+            selectedState = matchedD.state;
+            await renderHeatAndPins();
+            await loadDistrictDetails(d, matchedD.state);
+          }
+          return;
+        }
+
+        // CASE B: Google does not have an exact polygon, or only provides a square/bounding box
+        if (gRes && (gRes.geometry.bounds || gRes.geometry.viewport)) {
+          console.log(`[Smart Boundary Engine] Google only returned bounding box/square for "${query}". Discarding square! Overriding with verified local 2024 dataset polygon.`);
+        }
+
+        // Search in verified local 2024 LGD dataset
+        const matched = findMatchedDistrict(qLower, gRes);
+        if (matched) {
+          if (googlePolygonLayer) {
+            map.removeLayer(googlePolygonLayer);
+            googlePolygonLayer = null;
+          }
+
+          selectedState = matched.state;
+          let distName = matched.district;
+          if (distName === 'Greater Bombay' || distName === 'Mumbai Suburban' || distName === 'Mumbai City') {
+            distName = 'Mumbai';
+          }
+          selectedDistrict = distName;
+          selectedPincode = null;
+          document.getElementById('backBtn').style.display = 'block';
+          document.getElementById('breadcrumbText').innerText = `All India > ${matched.state} > ${distName}`;
+          updatePolygonBadge('local_dataset');
+
+          const bounds = L.geoJson(matched.feature).getBounds();
+          map.fitBounds(bounds, { padding: [25, 25] });
+
+          renderStatePolygons();
+          renderDistrictPolygons();
+          await renderHeatAndPins();
+          await loadDistrictDetails(distName, matched.state);
+          return;
+        }
+
+        // Search state in stateGeojson
+        if (stateGeojson && stateGeojson.features) {
+          for (const f of stateGeojson.features) {
+            const s = (f.properties.state_name || '').toLowerCase();
+            if (s === qLower || s.includes(qLower) || qLower.includes(s)) {
+              if (googlePolygonLayer) {
+                map.removeLayer(googlePolygonLayer);
+                googlePolygonLayer = null;
+              }
+              const bounds = L.geoJson(f).getBounds();
+              drillDownToState(f.properties.state_name, bounds);
+              return;
+            }
+          }
+        }
+
+        alert(`Area or PIN '${query}' not found. Please enter a valid 6-digit PIN or city/district name.`);
+      } catch (err) {
+        console.error("Search processing error:", err);
+      } finally {
+        showLoader(false);
       }
     }
 

@@ -7,10 +7,14 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+  <!-- Google Maps JavaScript API with Official India Region (Survey of India Boundary) -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAW_pwrx1FI-GqGJhE7BWZxqhX1mfP1APo&region=IN&libraries=places,visualization"></script>
+  <!-- Leaflet Google Mutant Plugin for Native Google Maps Rendering -->
+  <script src="https://unpkg.com/leaflet.gridlayer.googlemutant@0.14.1/dist/Leaflet.GoogleMutant.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=106">
+  <link rel="stylesheet" href="/css/style.css?v=110">
 </head>
 <body>
 
@@ -56,8 +60,8 @@
         <option value="Jun-26" selected>Jun 2026 (Current)</option>
         <option value="Jul-26">Jul 2026</option>
       </select>
-      <input type="text" id="searchInput" class="search-box" placeholder="Search 6-digit PIN..." maxlength="6" onkeydown="if(event.key==='Enter') searchPincode()" onchange="searchPincode()">
-      <button onclick="searchPincode()" style="background:#2563eb; color:#fff; border:none; padding:6px 10px; border-radius:6px; font-weight:700; font-size:0.8rem; cursor:pointer;">Search</button>
+      <input type="text" id="searchInput" class="search-box" placeholder="Search PIN, City, or District..." onkeydown="if(event.key==='Enter') searchPincode()">
+      <button onclick="searchPincode()" style="background:#2563eb; color:#fff; border:none; padding:6px 12px; border-radius:6px; font-weight:700; font-size:0.8rem; cursor:pointer;">Search</button>
     </div>
   </header>
 
@@ -81,11 +85,11 @@
         <span>High Inflow</span>
       </div>
       <div class="control-row">
-        <span>View</span>
+        <span>Google Map</span>
         <div class="mode-toggle">
-          <button class="mode-btn active" id="btnMapCanvas" onclick="setBasemap('canvas')">Canvas</button>
-          <button class="mode-btn" id="btnMapContour" onclick="setBasemap('contour')">Contour</button>
+          <button class="mode-btn active" id="btnMapRoadmap" onclick="setBasemap('roadmap')">Roadmap</button>
           <button class="mode-btn" id="btnMapSatellite" onclick="setBasemap('satellite')">Satellite</button>
+          <button class="mode-btn" id="btnMapTerrain" onclick="setBasemap('terrain')">Terrain</button>
         </div>
       </div>
       <div class="control-row">
@@ -275,6 +279,6 @@
     </div>
   </div>
 
-  <script src="/js/dashboard.js?v=106"></script>
+  <script src="/js/dashboard.js?v=110"></script>
 </body>
 </html>

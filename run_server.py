@@ -1,4 +1,4 @@
-﻿"""
+"""
 =============================================================================
  PRODUCTION INDIA MFD MICRO-MARKET RADAR RUNNER
 =============================================================================
@@ -7,7 +7,7 @@ import sys
 import socketserver
 from app.config import PORT, HOST, SQLITE_DB
 from app.api import MarketRadarHandler
-from app.services import load_geojson_cache
+from app.services import load_geojson_cache, warmup_caches
 
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -16,6 +16,10 @@ def main():
     load_geojson_cache()
     print("GeoJSON cache loaded successfully.", flush=True)
 
+    print("Pre-warming high-speed query caches...", flush=True)
+    warmup_caches()
+
+    socketserver.TCPServer.allow_reuse_address = True
     with socketserver.ThreadingTCPServer((HOST, PORT), MarketRadarHandler) as httpd:
         print("\n=================================================================", flush=True)
         print(f"  PRODUCTION PINCODE RADAR SERVER LIVE AT: http://localhost:{PORT}", flush=True)

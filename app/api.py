@@ -2,7 +2,7 @@ import http.server
 import json
 import os
 import urllib.parse
-from app.config import STATIC_DIR
+from app.config import STATIC_DIR, GOOGLE_MAPS_API_KEY
 from app.services import (
     get_available_months,
     get_national_summary,
@@ -24,6 +24,17 @@ class MarketRadarHandler(http.server.SimpleHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         path = parsed.path
         params = urllib.parse.parse_qs(parsed.query)
+
+        if path == "/favicon.ico":
+            self.send_response(204)
+            self.end_headers()
+            return
+
+        # 0. API: Client configuration (Google Maps API Key)
+        if path == "/api/config":
+            is_configured = bool(GOOGLE_MAPS_API_KEY and GOOGLE_MAPS_API_KEY != "YOUR_API_KEY_HERE")
+            self.send_json_response({"google_maps_api_key": GOOGLE_MAPS_API_KEY, "is_configured": is_configured})
+            return
 
         # 1. API: List available months
         if path == "/api/months":
@@ -106,18 +117,24 @@ class MarketRadarHandler(http.server.SimpleHTTPRequestHandler):
         super().do_GET()
 
     def send_json_response(self, data, status=200):
-        body = json.dumps(data, ensure_ascii=False).encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
-        self.wfile.write(body)
+        try:
+            body = json.dumps(data, ensure_ascii=False).encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(body)
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
+            pass
 
     def send_bytes_response(self, body, content_type, status=200):
-        self.send_response(status)
-        self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.send_response(status)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(body)
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError):
+            pass

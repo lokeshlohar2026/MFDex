@@ -1,4 +1,4 @@
-﻿# Virtual Environment
+# Virtual Environment
 .venv/
 env/
 venv/
@@ -35,6 +35,7 @@ user_data/
 Data/
 distributor_reports/
 test_*.png
+Mfdex Insights/
 
 # OS / Editor junk
 .DS_Store
