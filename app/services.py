@@ -503,7 +503,7 @@ def get_district_details(month: str, district: str, state: Optional[str] = None)
 def get_map_summary(month: str, state: Optional[str] = None, district: Optional[str] = None) -> Dict[str, Any]:
     query = """
         SELECT 
-            pincode, lat, lon, city, district, state,
+            pincode, lat, lon, district, state,
             ROUND(SUM(closing_aum_cr), 2) as total_aum_cr,
             ROUND(SUM(gross_inflows_cr), 2) as total_gross_cr,
             ROUND(SUM(redemptions_cr), 2) as total_redemptions_cr,
@@ -532,7 +532,7 @@ def get_map_summary(month: str, state: Optional[str] = None, district: Optional[
         rows = cur.fetchall()
         data = [
             [
-                r["pincode"], r["lat"], r["lon"], r["city"], r["district"], r["state"],
+                r["pincode"], r["lat"], r["lon"], r["district"], r["district"], r["state"],
                 r["total_aum_cr"], r["total_gross_cr"], r["total_redemptions_cr"],
                 r["total_net_added_cr"], r["total_sip_cr"], r["total_sip_count"],
                 r["avg_sip_ticket_inr"], r["active_mfds"], r["retention_pct"]
@@ -546,8 +546,8 @@ def get_pincode_details(month: str, pincode: str) -> Dict[str, Any]:
         cur = conn.cursor()
         cur.execute("""
             SELECT 
-                month, pincode, MAX(city) as city, MAX(district) as district, MAX(state) as state,
-                MAX(city_tier) as city_tier, MAX(lat) as lat, MAX(lon) as lon,
+                month, pincode, MAX(district) as city, MAX(district) as district, MAX(state) as state,
+                MAX(lat) as lat, MAX(lon) as lon,
                 ROUND(SUM(closing_aum_cr), 2) as total_aum_cr,
                 ROUND(SUM(avg_aum_cr), 2) as total_avg_aum_cr,
                 ROUND(SUM(gross_inflows_cr), 2) as total_gross_cr,
