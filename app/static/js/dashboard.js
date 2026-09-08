@@ -449,7 +449,13 @@
     async function selectPincode(pin, coords) {
       selectedPincode = pin;
       if (coords) map.setView(coords, Math.max(map.getZoom(), 12));
-      document.getElementById('breadcrumbText').innerText = `All India > ${selectedState || 'State'} > ${selectedDistrict || 'District'} > PIN ${pin}`;
+      let distDisplay = selectedDistrict || 'District';
+      if (distDisplay === 'Greater Bombay' || distDisplay === 'Mumbai Suburban' || distDisplay === 'Mumbai City') {
+        distDisplay = 'Mumbai';
+      }
+      const cached = pincodeLocalityCache.get(pin);
+      const pinLabel = (cached && cached.locality) ? `PIN ${pin} (${cached.locality})` : `PIN ${pin}`;
+      document.getElementById('breadcrumbText').innerText = `All India > ${selectedState || 'State'} > ${distDisplay} > ${pinLabel}`;
       await loadPincodeDetails(pin);
     }
 
@@ -541,14 +547,177 @@
       );
     }
 
+    // -------------------------------------------------------------
+    // APPROACH B: PRODUCTION-GRADE LIVE GOOGLE GEOCODING LOCALITY ENGINE
+    // -------------------------------------------------------------
+    const pincodeLocalityCache = new Map();
+    const pendingGeocodePromises = new Map();
+
+    function normalizeCityName(cityName) {
+      if (!cityName) return '';
+      const c = cityName.trim();
+      const lower = c.toLowerCase();
+      if (lower.includes('mumbai') || lower.includes('bombay')) return 'Mumbai';
+      if (lower.includes('bengaluru') || lower.includes('bangalore')) return 'Bengaluru';
+      if (lower === 'delhi' || lower === 'new delhi') return 'New Delhi';
+      if (lower.includes('calcutta') || lower.includes('kolkata')) return 'Kolkata';
+      if (lower.includes('madras') || lower.includes('chennai')) return 'Chennai';
+      return c;
+    }
+
+    async function resolvePincodeLocality(pin, lat, lon, sum) {
+      if (!pin) return null;
+      if (pincodeLocalityCache.has(pin)) {
+        return pincodeLocalityCache.get(pin);
+      }
+      if (pendingGeocodePromises.has(pin)) {
+        return pendingGeocodePromises.get(pin);
+      }
+
+      let fallbackDist = normalizeCityName(sum.district || 'District');
+      const fallbackSubtitle = `${sum.city || 'City'}, ${sum.state} (${fallbackDist})`;
+
+      if (!window.google || !google.maps || !google.maps.Geocoder) {
+        const fallbackObj = { locality: null, subtitle: fallbackSubtitle, city: fallbackDist, state: sum.state };
+        pincodeLocalityCache.set(pin, fallbackObj);
+        return fallbackObj;
+      }
+
+      const geocodePromise = (async () => {
+        const geocoder = new google.maps.Geocoder();
+
+        function extractFromAddressComponents(results) {
+          if (!results || results.length === 0) return null;
+          let microLocality = null;
+          let neighborhood = null;
+          let subloc2 = null;
+          let admin3 = null;
+          let city = null;
+          let state = null;
+
+          for (const res of results) {
+            if (!res.address_components) continue;
+            for (const c of res.address_components) {
+              const types = c.types || [];
+              if (!microLocality && types.includes('sublocality_level_1')) microLocality = c.long_name;
+              if (!neighborhood && types.includes('neighborhood')) neighborhood = c.long_name;
+              if (!subloc2 && types.includes('sublocality_level_2')) subloc2 = c.long_name;
+              if (!admin3 && types.includes('administrative_area_level_3')) admin3 = c.long_name;
+              if (!city && (types.includes('locality') || types.includes('administrative_area_level_2'))) city = c.long_name;
+              if (!state && types.includes('administrative_area_level_1')) state = c.long_name;
+            }
+          }
+
+          const chosenLocality = microLocality || neighborhood || subloc2 || admin3;
+          const cleanCity = normalizeCityName(city || fallbackDist);
+          const cleanState = state || sum.state || '';
+
+          let finalLocality = chosenLocality;
+          if (finalLocality && cleanCity && finalLocality.toLowerCase() === cleanCity.toLowerCase()) {
+            finalLocality = subloc2 || neighborhood || null;
+          }
+
+          return {
+            locality: finalLocality,
+            city: cleanCity,
+            state: cleanState
+          };
+        }
+
+        let parsed = null;
+        // Strategy 1: Reverse geocode by marker coordinates
+        if (lat && lon && Math.abs(lat) > 0.01 && Math.abs(lon) > 0.01) {
+          parsed = await new Promise((resolve) => {
+            geocoder.geocode({ location: { lat: parseFloat(lat), lng: parseFloat(lon) } }, (results, status) => {
+              if (status === 'OK' && results) {
+                resolve(extractFromAddressComponents(results));
+              } else {
+                resolve(null);
+              }
+            });
+          });
+        }
+
+        // Strategy 2: If coordinates didn't yield a micro-locality, try postal code query
+        if (!parsed || !parsed.locality) {
+          const pinParsed = await new Promise((resolve) => {
+            geocoder.geocode({ address: `${pin}, India`, componentRestrictions: { country: 'IN', postalCode: pin } }, (results, status) => {
+              if (status === 'OK' && results) {
+                resolve(extractFromAddressComponents(results));
+              } else {
+                resolve(null);
+              }
+            });
+          });
+          if (pinParsed && pinParsed.locality) {
+            parsed = pinParsed;
+          }
+        }
+
+        let formattedSubtitle = fallbackSubtitle;
+        let finalLoc = null;
+        let finalCity = fallbackDist;
+        let finalState = sum.state || '';
+
+        if (parsed) {
+          finalLoc = parsed.locality;
+          if (parsed.city) finalCity = parsed.city;
+          if (parsed.state) finalState = parsed.state;
+
+          if (finalLoc) {
+            formattedSubtitle = `${finalLoc}, ${finalCity} (${finalState})`;
+          } else {
+            formattedSubtitle = `${finalCity}, ${finalState}`;
+          }
+        }
+
+        const resObj = {
+          locality: finalLoc,
+          subtitle: formattedSubtitle,
+          city: finalCity,
+          state: finalState
+        };
+
+        pincodeLocalityCache.set(pin, resObj);
+        pendingGeocodePromises.delete(pin);
+        return resObj;
+      })();
+
+      pendingGeocodePromises.set(pin, geocodePromise);
+      return geocodePromise;
+    }
+
     function renderSidebarPincode(sum, schemes) {
       document.getElementById('sideTierTag').innerText = "Micro-Market Pincode";
-      document.getElementById('sideTitle').innerText = `PIN ${sum.pincode}`;
-      let distName = sum.district || 'District';
-      if (distName === 'Greater Bombay' || distName === 'Mumbai Suburban' || distName === 'Mumbai City') {
-        distName = 'Mumbai';
+      let distName = normalizeCityName(sum.district || 'District');
+
+      // Check cache for instant synchronous render
+      const cached = pincodeLocalityCache.get(sum.pincode);
+      if (cached && cached.subtitle) {
+        document.getElementById('sideTitle').innerText = cached.locality ? `PIN ${sum.pincode} · ${cached.locality}` : `PIN ${sum.pincode}`;
+        document.getElementById('sideSubtitle').innerText = cached.subtitle;
+        const bEl = document.getElementById('breadcrumbText');
+        if (bEl && cached.locality) {
+          bEl.innerText = `All India > ${sum.state} > ${cached.city || distName} > PIN ${sum.pincode} (${cached.locality})`;
+        }
+      } else {
+        document.getElementById('sideTitle').innerText = `PIN ${sum.pincode}`;
+        document.getElementById('sideSubtitle').innerText = `${sum.city || 'City'}, ${sum.state} (${distName})`;
+
+        // Progressive asynchronous resolution via Google Geocoder
+        resolvePincodeLocality(sum.pincode, sum.lat, sum.lon, sum).then(res => {
+          if (res && selectedPincode === sum.pincode) {
+            document.getElementById('sideSubtitle').innerText = res.subtitle;
+            if (res.locality) {
+              document.getElementById('sideTitle').innerText = `PIN ${sum.pincode} · ${res.locality}`;
+              const bEl = document.getElementById('breadcrumbText');
+              if (bEl) {
+                bEl.innerText = `All India > ${sum.state} > ${res.city || distName} > PIN ${sum.pincode} (${res.locality})`;
+              }
+            }
+          }
+        });
       }
-      document.getElementById('sideSubtitle').innerText = `${sum.city || 'City'}, ${sum.state} (${distName})`;
 
       const pinLump = sum.total_lumpsum_cr !== undefined ? sum.total_lumpsum_cr : Math.max(0, (sum.total_sales_cr || 0) - (sum.total_sip_cr || 0));
       renderMetricsToSidebar(
