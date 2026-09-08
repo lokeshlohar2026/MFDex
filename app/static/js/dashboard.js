@@ -155,7 +155,7 @@
       const gross = s.nat_gross || 0;
       const sip = s.nat_sip || 0;
       const stp = s.nat_stp || 0;
-      const lumpsum = Math.max(0, gross - sip - stp);
+      const lumpsum = s.nat_lump !== undefined ? s.nat_lump : Math.max(0, (s.nat_sales || 0) - sip);
       const breakdownEl = document.getElementById('topNatInflowBreakdown');
       if (breakdownEl) {
         breakdownEl.innerText = `Lump: ₹${Math.round(lumpsum).toLocaleString()} Cr | SIP: ₹${Math.round(sip).toLocaleString()} Cr | STP: ₹${Math.round(stp).toLocaleString()} Cr`;
@@ -503,10 +503,11 @@
       document.getElementById('sideTitle').innerText = "All India Front";
       document.getElementById('sideSubtitle').innerText = "Verified Independent MFD & RIA Telemetry";
 
+      const natLump = sum.nat_lump !== undefined ? sum.nat_lump : Math.max(0, (sum.nat_sales || 0) - (sum.nat_sip || 0));
       renderMetricsToSidebar(
         sum.nat_net || 0, sum.nat_gross || 0, sum.nat_outflow || 0,
         sum.nat_sip || 0, sum.nat_stp || 0, sum.nat_sip_cnt || 0, sum.avg_sip_ticket || 0,
-        sum.nat_aum || 0, sum.nat_mfds_footprint || 0, schemes
+        sum.nat_aum || 0, sum.nat_mfds_footprint || 0, schemes, natLump
       );
     }
 
@@ -515,10 +516,11 @@
       document.getElementById('sideTitle').innerText = sum.state;
       document.getElementById('sideSubtitle').innerText = `${(sum.pincodes_count || 0).toLocaleString()} Active Postal Pincodes`;
 
+      const stateLump = sum.total_lumpsum_cr !== undefined ? sum.total_lumpsum_cr : Math.max(0, (sum.total_sales_cr || 0) - (sum.total_sip_cr || 0));
       renderMetricsToSidebar(
         sum.total_net_added_cr || 0, sum.total_gross_cr || 0, sum.total_redemptions_cr || 0,
         sum.total_sip_cr || 0, sum.total_stp_cr || 0, sum.total_sip_count || 0, sum.avg_sip_ticket_inr || 0,
-        sum.total_aum_cr || 0, sum.active_mfds || 0, schemes
+        sum.total_aum_cr || 0, sum.active_mfds || 0, schemes, stateLump
       );
     }
 
@@ -531,10 +533,11 @@
       document.getElementById('sideTitle').innerText = displayName;
       document.getElementById('sideSubtitle').innerText = `District in ${sum.state} (${sum.pincodes_count || 0} PINs)`;
 
+      const distLump = sum.total_lumpsum_cr !== undefined ? sum.total_lumpsum_cr : Math.max(0, (sum.total_sales_cr || 0) - (sum.total_sip_cr || 0));
       renderMetricsToSidebar(
         sum.total_net_added_cr || 0, sum.total_gross_cr || 0, sum.total_redemptions_cr || 0,
         sum.total_sip_cr || 0, sum.total_stp_cr || 0, sum.total_sip_count || 0, sum.avg_sip_ticket_inr || 0,
-        sum.total_aum_cr || 0, sum.total_mfds_footprint || 0, schemes
+        sum.total_aum_cr || 0, sum.total_mfds_footprint || 0, schemes, distLump
       );
     }
 
@@ -547,14 +550,15 @@
       }
       document.getElementById('sideSubtitle').innerText = `${sum.city || 'City'}, ${sum.state} (${distName})`;
 
+      const pinLump = sum.total_lumpsum_cr !== undefined ? sum.total_lumpsum_cr : Math.max(0, (sum.total_sales_cr || 0) - (sum.total_sip_cr || 0));
       renderMetricsToSidebar(
         sum.total_net_added_cr || 0, sum.total_gross_cr || 0, sum.total_redemptions_cr || 0,
         sum.total_sip_cr || 0, sum.total_stp_cr || 0, sum.total_sip_count || 0, sum.avg_sip_ticket_inr || 0,
-        sum.total_aum_cr || 0, sum.active_mfds || 0, schemes
+        sum.total_aum_cr || 0, sum.active_mfds || 0, schemes, pinLump
       );
     }
 
-    function renderMetricsToSidebar(net, gross, outflow, sip, stp, sipCount, avgTicket, aum, mfds, schemes) {
+    function renderMetricsToSidebar(net, gross, outflow, sip, stp, sipCount, avgTicket, aum, mfds, schemes, lumpsum) {
       currentSchemes = schemes || [];
 
       // Hero Card Net Added
@@ -569,7 +573,7 @@
       document.getElementById('sideRetention').innerText = `Retention: ${retPct.toFixed(1)}%`;
 
       // Inflow Sourcing Breakdown: Lump | SIP | STP
-      const lump = Math.max(0, gross - sip - stp);
+      const lump = (lumpsum !== undefined && lumpsum !== null) ? lumpsum : Math.max(0, gross - sip - stp);
       const inflowEl = document.getElementById('sideInflowBreakdown');
       if (inflowEl) {
         inflowEl.innerHTML = `<span>Inflows: <b>Lump: ₹${lump.toFixed(1)} Cr</b> | <b>SIP: ₹${sip.toFixed(1)} Cr</b> | <b>STP: ₹${stp.toFixed(1)} Cr</b></span>`;
