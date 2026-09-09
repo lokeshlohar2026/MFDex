@@ -571,6 +571,121 @@
     const pincodeLocalityCache = new Map();
     const pendingGeocodePromises = new Map();
 
+    // Curated high-precision master for India's top wealth & micro-market pincodes
+    const CURATED_PINCODE_LOCALITIES = {
+      // Pune Key Micro-markets
+      '411045': { locality: 'Baner / Balewadi', city: 'Pune', state: 'Maharashtra' },
+      '411015': { locality: 'Dhanori / Vishrantwadi', city: 'Pune', state: 'Maharashtra' },
+      '411025': { locality: 'Donje / Sinhagad', city: 'Pune', state: 'Maharashtra' },
+      '411001': { locality: 'Pune Camp / Station', city: 'Pune', state: 'Maharashtra' },
+      '411004': { locality: 'Deccan Gymkhana / Shivajinagar', city: 'Pune', state: 'Maharashtra' },
+      '411007': { locality: 'Aundh / University', city: 'Pune', state: 'Maharashtra' },
+      '411014': { locality: 'Viman Nagar / Wadgaon Sheri', city: 'Pune', state: 'Maharashtra' },
+      '411006': { locality: 'Yerwada / Koregaon Park', city: 'Pune', state: 'Maharashtra' },
+      '411028': { locality: 'Hadapsar / Magarpatta', city: 'Pune', state: 'Maharashtra' },
+      '411038': { locality: 'Kothrud', city: 'Pune', state: 'Maharashtra' },
+      '411057': { locality: 'Hinjawadi / Wakad', city: 'Pune', state: 'Maharashtra' },
+      '411027': { locality: 'Pimple Saudagar / Sangvi', city: 'Pune', state: 'Maharashtra' },
+      '411033': { locality: 'Thergaon / Chinchwad', city: 'Pune', state: 'Maharashtra' },
+      '411018': { locality: 'Pimpri', city: 'Pune', state: 'Maharashtra' },
+      '411048': { locality: 'Kondhwa', city: 'Pune', state: 'Maharashtra' },
+      '411040': { locality: 'Wanowrie / Fatima Nagar', city: 'Pune', state: 'Maharashtra' },
+      '411037': { locality: 'Bibwewadi / Marketyard', city: 'Pune', state: 'Maharashtra' },
+      '411052': { locality: 'Karve Nagar / Hingne', city: 'Pune', state: 'Maharashtra' },
+      '411041': { locality: 'Vadgaon Budruk / Dhayari', city: 'Pune', state: 'Maharashtra' },
+      '411046': { locality: 'Katraj / Ambegaon', city: 'Pune', state: 'Maharashtra' },
+      '411060': { locality: 'Undri / Pisoli', city: 'Pune', state: 'Maharashtra' },
+
+      // Mumbai Key Micro-markets
+      '400001': { locality: 'Fort / Colaba', city: 'Mumbai', state: 'Maharashtra' },
+      '400020': { locality: 'Churchgate / Marine Lines', city: 'Mumbai', state: 'Maharashtra' },
+      '400021': { locality: 'Nariman Point', city: 'Mumbai', state: 'Maharashtra' },
+      '400050': { locality: 'Bandra West', city: 'Mumbai', state: 'Maharashtra' },
+      '400051': { locality: 'Bandra East / BKC', city: 'Mumbai', state: 'Maharashtra' },
+      '400049': { locality: 'Juhu', city: 'Mumbai', state: 'Maharashtra' },
+      '400053': { locality: 'Andheri West', city: 'Mumbai', state: 'Maharashtra' },
+      '400069': { locality: 'Andheri East', city: 'Mumbai', state: 'Maharashtra' },
+      '400076': { locality: 'Powai', city: 'Mumbai', state: 'Maharashtra' },
+      '400054': { locality: 'Santacruz West', city: 'Mumbai', state: 'Maharashtra' },
+      '400052': { locality: 'Khar West', city: 'Mumbai', state: 'Maharashtra' },
+      '400058': { locality: 'Andheri West (Amboli)', city: 'Mumbai', state: 'Maharashtra' },
+      '400064': { locality: 'Malad West', city: 'Mumbai', state: 'Maharashtra' },
+      '400092': { locality: 'Borivali West', city: 'Mumbai', state: 'Maharashtra' },
+      '400066': { locality: 'Borivali East', city: 'Mumbai', state: 'Maharashtra' },
+      '400077': { locality: 'Ghatkopar East', city: 'Mumbai', state: 'Maharashtra' },
+      '400086': { locality: 'Ghatkopar West', city: 'Mumbai', state: 'Maharashtra' },
+      '400018': { locality: 'Worli', city: 'Mumbai', state: 'Maharashtra' },
+      '400013': { locality: 'Lower Parel', city: 'Mumbai', state: 'Maharashtra' },
+      '400028': { locality: 'Dadar West', city: 'Mumbai', state: 'Maharashtra' },
+      '400014': { locality: 'Dadar East', city: 'Mumbai', state: 'Maharashtra' },
+      '400071': { locality: 'Chembur', city: 'Mumbai', state: 'Maharashtra' },
+      '400080': { locality: 'Mulund West', city: 'Mumbai', state: 'Maharashtra' },
+      '400601': { locality: 'Thane West', city: 'Thane', state: 'Maharashtra' },
+      '400703': { locality: 'Vashi', city: 'Navi Mumbai', state: 'Maharashtra' },
+      '400705': { locality: 'Sanpada', city: 'Navi Mumbai', state: 'Maharashtra' },
+      '400706': { locality: 'Nerul', city: 'Navi Mumbai', state: 'Maharashtra' },
+      '400709': { locality: 'Kopar Khairane', city: 'Navi Mumbai', state: 'Maharashtra' },
+      '400614': { locality: 'CBD Belapur', city: 'Navi Mumbai', state: 'Maharashtra' },
+
+      // Bengaluru Key Micro-markets
+      '560001': { locality: 'MG Road / Brigade Rd', city: 'Bengaluru', state: 'Karnataka' },
+      '560034': { locality: 'Koramangala', city: 'Bengaluru', state: 'Karnataka' },
+      '560038': { locality: 'Indiranagar', city: 'Bengaluru', state: 'Karnataka' },
+      '560066': { locality: 'Whitefield', city: 'Bengaluru', state: 'Karnataka' },
+      '560100': { locality: 'Electronic City', city: 'Bengaluru', state: 'Karnataka' },
+      '560078': { locality: 'JP Nagar', city: 'Bengaluru', state: 'Karnataka' },
+      '560011': { locality: 'Jayanagar', city: 'Bengaluru', state: 'Karnataka' },
+      '560102': { locality: 'HSR Layout', city: 'Bengaluru', state: 'Karnataka' },
+      '560004': { locality: 'Basavanagudi', city: 'Bengaluru', state: 'Karnataka' },
+      '560003': { locality: 'Malleshwaram', city: 'Bengaluru', state: 'Karnataka' },
+      '560092': { locality: 'Hebbal / Sahakara Nagar', city: 'Bengaluru', state: 'Karnataka' },
+      '560048': { locality: 'Hoodi / Mahadevapura', city: 'Bengaluru', state: 'Karnataka' },
+      '560037': { locality: 'Marathahalli', city: 'Bengaluru', state: 'Karnataka' },
+      '560068': { locality: 'Madiwala / Bommanahalli', city: 'Bengaluru', state: 'Karnataka' },
+
+      // Delhi NCR Key Micro-markets
+      '110001': { locality: 'Connaught Place', city: 'New Delhi', state: 'Delhi' },
+      '110003': { locality: 'Lodi Estate / Golf Links', city: 'New Delhi', state: 'Delhi' },
+      '110016': { locality: 'Hauz Khas / Green Park', city: 'New Delhi', state: 'Delhi' },
+      '110019': { locality: 'Kalkaji / Nehru Place', city: 'New Delhi', state: 'Delhi' },
+      '110021': { locality: 'Chanakyapuri', city: 'New Delhi', state: 'Delhi' },
+      '110024': { locality: 'Lajpat Nagar / Defence Colony', city: 'New Delhi', state: 'Delhi' },
+      '110048': { locality: 'Greater Kailash', city: 'New Delhi', state: 'Delhi' },
+      '110057': { locality: 'Vasant Vihar', city: 'New Delhi', state: 'Delhi' },
+      '110070': { locality: 'Vasant Kunj', city: 'New Delhi', state: 'Delhi' },
+      '122001': { locality: 'Gurugram Old City', city: 'Gurugram', state: 'Haryana' },
+      '122002': { locality: 'DLF Phase 1 / MG Road', city: 'Gurugram', state: 'Haryana' },
+      '122009': { locality: 'DLF Phase 3 / Cyber City', city: 'Gurugram', state: 'Haryana' },
+      '122018': { locality: 'Sohna Road / Sector 48-49', city: 'Gurugram', state: 'Haryana' },
+      '201301': { locality: 'Noida Sector 1-20', city: 'Noida', state: 'Uttar Pradesh' },
+
+      // Hyderabad Key Micro-markets
+      '500034': { locality: 'Banjara Hills', city: 'Hyderabad', state: 'Telangana' },
+      '500033': { locality: 'Jubilee Hills', city: 'Hyderabad', state: 'Telangana' },
+      '500081': { locality: 'Madhapur / HITEC City', city: 'Hyderabad', state: 'Telangana' },
+      '500032': { locality: 'Gachibowli', city: 'Hyderabad', state: 'Telangana' },
+      '500003': { locality: 'Secunderabad', city: 'Hyderabad', state: 'Telangana' },
+      '500016': { locality: 'Begumpet', city: 'Hyderabad', state: 'Telangana' },
+      '500082': { locality: 'Kondapur', city: 'Hyderabad', state: 'Telangana' },
+
+      // Chennai Key Micro-markets
+      '600004': { locality: 'Mylapore', city: 'Chennai', state: 'Tamil Nadu' },
+      '600028': { locality: 'R.A. Puram', city: 'Chennai', state: 'Tamil Nadu' },
+      '600020': { locality: 'Adyar', city: 'Chennai', state: 'Tamil Nadu' },
+      '600041': { locality: 'Thiruvanmiyur / ECR', city: 'Chennai', state: 'Tamil Nadu' },
+      '600034': { locality: 'Nungambakkam', city: 'Chennai', state: 'Tamil Nadu' },
+      '600017': { locality: 'T. Nagar', city: 'Chennai', state: 'Tamil Nadu' },
+      '600096': { locality: 'Perungudi / OMR', city: 'Chennai', state: 'Tamil Nadu' },
+
+      // Kolkata Key Micro-markets
+      '700016': { locality: 'Park Street', city: 'Kolkata', state: 'West Bengal' },
+      '700019': { locality: 'Ballygunge', city: 'Kolkata', state: 'West Bengal' },
+      '700029': { locality: 'Gariahat', city: 'Kolkata', state: 'West Bengal' },
+      '700053': { locality: 'Alipore', city: 'Kolkata', state: 'West Bengal' },
+      '700091': { locality: 'Salt Lake Sector V', city: 'Kolkata', state: 'West Bengal' },
+      '700156': { locality: 'New Town Action Area I', city: 'Kolkata', state: 'West Bengal' }
+    };
+
     function normalizeCityName(cityName) {
       if (!cityName) return '';
       const c = cityName.trim();
@@ -585,6 +700,20 @@
 
     async function resolvePincodeLocality(pin, lat, lon, sum) {
       if (!pin) return null;
+
+      // 1. Curated Master Priority (Instant 0ms synchronous resolution)
+      if (CURATED_PINCODE_LOCALITIES[pin]) {
+        const cur = CURATED_PINCODE_LOCALITIES[pin];
+        const resObj = {
+          locality: cur.locality,
+          subtitle: `${cur.locality}, ${cur.city} (${cur.state})`,
+          city: cur.city,
+          state: cur.state
+        };
+        pincodeLocalityCache.set(pin, resObj);
+        return resObj;
+      }
+
       if (pincodeLocalityCache.has(pin)) {
         return pincodeLocalityCache.get(pin);
       }
@@ -606,10 +735,9 @@
 
         function extractFromAddressComponents(results) {
           if (!results || results.length === 0) return null;
-          let microLocality = null;
-          let neighborhood = null;
-          let subloc2 = null;
-          let admin3 = null;
+
+          // Consensus vote-scoring across all returned result cards
+          const localityScores = {};
           let city = null;
           let state = null;
 
@@ -617,26 +745,40 @@
             if (!res.address_components) continue;
             for (const c of res.address_components) {
               const types = c.types || [];
-              if (!microLocality && types.includes('sublocality_level_1')) microLocality = c.long_name;
-              if (!neighborhood && types.includes('neighborhood')) neighborhood = c.long_name;
-              if (!subloc2 && types.includes('sublocality_level_2')) subloc2 = c.long_name;
-              if (!admin3 && types.includes('administrative_area_level_3')) admin3 = c.long_name;
-              if (!city && (types.includes('locality') || types.includes('administrative_area_level_2'))) city = c.long_name;
-              if (!state && types.includes('administrative_area_level_1')) state = c.long_name;
+              const name = (c.long_name || '').trim();
+              if (!name || /^\d+$/.test(name)) continue;
+
+              if (types.includes('sublocality_level_1')) {
+                localityScores[name] = (localityScores[name] || 0) + 3;
+              } else if (types.includes('neighborhood')) {
+                localityScores[name] = (localityScores[name] || 0) + 2;
+              } else if (types.includes('sublocality_level_2') || types.includes('sublocality')) {
+                localityScores[name] = (localityScores[name] || 0) + 1;
+              }
+
+              if (!city && (types.includes('locality') || types.includes('administrative_area_level_2'))) city = name;
+              if (!state && types.includes('administrative_area_level_1')) state = name;
             }
           }
 
-          const chosenLocality = microLocality || neighborhood || subloc2 || admin3;
+          let chosenLocality = null;
+          let maxScore = -1;
+          for (const [locName, score] of Object.entries(localityScores)) {
+            if (score > maxScore) {
+              maxScore = score;
+              chosenLocality = locName;
+            }
+          }
+
           const cleanCity = normalizeCityName(city || fallbackDist);
           const cleanState = state || sum.state || '';
 
-          let finalLocality = chosenLocality;
-          if (finalLocality && cleanCity && finalLocality.toLowerCase() === cleanCity.toLowerCase()) {
-            finalLocality = subloc2 || neighborhood || null;
+          if (chosenLocality && cleanCity && chosenLocality.toLowerCase() === cleanCity.toLowerCase()) {
+            chosenLocality = null;
           }
 
           return {
-            locality: finalLocality,
+            locality: chosenLocality,
             city: cleanCity,
             state: cleanState
           };
@@ -708,6 +850,17 @@
     function renderSidebarPincode(sum, schemes) {
       document.getElementById('sideTierTag').innerText = "Micro-Market Pincode";
       let distName = normalizeCityName(sum.district || 'District');
+
+      // Pre-seed from curated master for instantaneous 0ms display
+      if (CURATED_PINCODE_LOCALITIES[sum.pincode] && !pincodeLocalityCache.has(sum.pincode)) {
+        const cur = CURATED_PINCODE_LOCALITIES[sum.pincode];
+        pincodeLocalityCache.set(sum.pincode, {
+          locality: cur.locality,
+          subtitle: `${cur.locality}, ${cur.city} (${cur.state})`,
+          city: cur.city,
+          state: cur.state
+        });
+      }
 
       // Check cache for instant synchronous render
       const cached = pincodeLocalityCache.get(sum.pincode);
@@ -1042,65 +1195,178 @@
       return null;
     }
 
+    function findDirectDistrict(qLower) {
+      if (!districtGeojson || !districtGeojson.features) return null;
+      if (qLower === 'mumbai' || qLower === 'bombay') {
+        const feat = districtGeojson.features.find(f => {
+          const d = (f.properties.district || '').toLowerCase();
+          return d.includes('mumbai');
+        });
+        if (feat) {
+          return { district: 'Mumbai', state: feat.properties.state, feature: feat };
+        }
+      }
+      for (const f of districtGeojson.features) {
+        const d = (f.properties.district || '').trim().toLowerCase();
+        if (d === qLower) {
+          return { district: f.properties.district, state: f.properties.state, feature: f };
+        }
+      }
+      return null;
+    }
+
+    async function drillDownToDistrict(matched) {
+      if (googlePolygonLayer) {
+        map.removeLayer(googlePolygonLayer);
+        googlePolygonLayer = null;
+      }
+
+      selectedState = matched.state;
+      let distName = matched.district;
+      if (distName === 'Greater Bombay' || distName === 'Mumbai Suburban' || distName === 'Mumbai City') {
+        distName = 'Mumbai';
+      }
+      selectedDistrict = distName;
+      selectedPincode = null;
+      document.getElementById('backBtn').style.display = 'block';
+      document.getElementById('breadcrumbText').innerText = `All India > ${matched.state} > ${distName}`;
+      updatePolygonBadge('local_dataset');
+
+      const bounds = L.geoJson(matched.feature).getBounds();
+      map.fitBounds(bounds, { padding: [25, 25] });
+
+      renderStatePolygons();
+      renderDistrictPolygons();
+      await renderHeatAndPins();
+      await loadDistrictDetails(distName, matched.state);
+    }
+
+    async function drillDownToPincode(pin, preloadedData = null) {
+      showLoader(true);
+      try {
+        let data = preloadedData;
+        if (!data) {
+          const res = await fetch(`/api/pincode_details?month=${currentMonth}&pincode=${pin}`);
+          data = await res.json();
+        }
+        if (data && data.summary) {
+          selectedPincode = pin;
+          selectedState = data.summary.state;
+          let d = data.summary.district || 'District';
+          if (d === 'Greater Bombay' || d === 'Mumbai Suburban' || d === 'Mumbai City') {
+            d = 'Mumbai';
+          }
+          selectedDistrict = d;
+          document.getElementById('backBtn').style.display = 'block';
+
+          if (googlePolygonLayer) {
+            map.removeLayer(googlePolygonLayer);
+            googlePolygonLayer = null;
+          }
+
+          if (data.summary.lat && data.summary.lon) {
+            map.setView([data.summary.lat, data.summary.lon], 13);
+          }
+          renderStatePolygons();
+          renderDistrictPolygons();
+          await renderHeatAndPins();
+          renderSidebarPincode(data.summary, data.schemes);
+        } else {
+          alert(`PIN ${pin} not found in verified database for ${currentMonth}.`);
+        }
+      } catch (e) {
+        console.error("drillDownToPincode error:", e);
+      } finally {
+        showLoader(false);
+      }
+    }
+
     async function searchPincode() {
-      const query = document.getElementById('searchInput').value.trim();
-      if (!query) return;
+      const rawQuery = document.getElementById('searchInput').value.trim();
+      if (!rawQuery) return;
 
-      // 1. If 6-digit postal PIN
-      if (query.length === 6 && !isNaN(query)) {
-        showLoader(true);
-        try {
-          const res = await fetch(`/api/pincode_details?month=${currentMonth}&pincode=${query}`);
-          const data = await res.json();
-          if (data.summary) {
-            selectedPincode = query;
-            selectedState = data.summary.state;
-            let d = data.summary.district || 'District';
-            if (d === 'Greater Bombay' || d === 'Mumbai Suburban' || d === 'Mumbai City') {
-              d = 'Mumbai';
-            }
-            selectedDistrict = d;
-            document.getElementById('backBtn').style.display = 'block';
-            document.getElementById('breadcrumbText').innerText = `All India > ${selectedState} > ${selectedDistrict} > PIN ${query}`;
-            updatePolygonBadge('local_dataset');
+      // 1. Direct Postal PIN Extraction (e.g., "411045", "PIN 411045", "pin: 411045", "411 045")
+      let matchedPin = null;
+      const cleanDigits = rawQuery.replace(/\D/g, '');
+      if (cleanDigits.length === 6) {
+        matchedPin = cleanDigits;
+      } else {
+        const pinMatch = rawQuery.match(/\b\d{6}\b/);
+        if (pinMatch) matchedPin = pinMatch[0];
+      }
 
+      if (matchedPin) {
+        await drillDownToPincode(matchedPin);
+        return;
+      }
+
+      const qLower = rawQuery.toLowerCase();
+
+      // 2. Direct District Match from 2024 LGD Master (e.g., "Pune", "Mumbai", "Nagpur", "Thane", "Jaipur")
+      const directDistrict = findDirectDistrict(qLower);
+      if (directDistrict) {
+        console.log(`[Smart Search] Direct verified district match: "${directDistrict.district}"`);
+        await drillDownToDistrict(directDistrict);
+        return;
+      }
+
+      // 3. Direct Locality Lookup in Curated Wealth & Micro-Market Master
+      for (const [pin, info] of Object.entries(CURATED_PINCODE_LOCALITIES)) {
+        const locLower = (info.locality || '').toLowerCase();
+        const tokens = locLower.split(/[\s/,-]+/).map(t => t.trim().toLowerCase()).filter(t => t.length >= 4);
+        if (locLower === qLower || tokens.includes(qLower) || (qLower.length >= 5 && locLower.includes(qLower))) {
+          console.log(`[Smart Search] Matched curated locality "${info.locality}" -> PIN ${pin}`);
+          await drillDownToPincode(pin);
+          return;
+        }
+      }
+
+      // 4. Direct State Boundary Matching
+      if (stateGeojson && stateGeojson.features) {
+        for (const f of stateGeojson.features) {
+          const s = (f.properties.state_name || '').toLowerCase();
+          if (s === qLower) {
             if (googlePolygonLayer) {
               map.removeLayer(googlePolygonLayer);
               googlePolygonLayer = null;
             }
-
-            if (data.summary.lat && data.summary.lon) {
-              map.setView([data.summary.lat, data.summary.lon], 12);
-            }
-            renderStatePolygons();
-            renderDistrictPolygons();
-            await renderHeatAndPins();
-            renderSidebarPincode(data.summary, data.schemes);
-          } else {
-            alert(`PIN ${query} not found in verified database for ${currentMonth}.`);
+            const bounds = L.geoJson(f).getBounds();
+            drillDownToState(f.properties.state_name, bounds);
+            return;
           }
-        } catch (e) {
-          console.error("Search error:", e);
-        } finally {
-          showLoader(false);
         }
-        return;
       }
 
-      // 2. City / District / Area Name: Smart Check
-      // RULE: If Google has exact polygon shape -> show it!
-      //       If Google is about to show square -> check our dataset and show our polygon!
+      // 5. Dynamic Geocoding & Boundary Resolution via Google
       showLoader(true);
       try {
-        const qLower = query.toLowerCase();
+        const gRes = await queryGoogleGeocode(rawQuery);
 
-        // Query Google Geocoding first
-        const gRes = await queryGoogleGeocode(query);
+        // Check if Google returned a postal_code in address_components for sublocalities/premises
+        let gPostalCode = null;
+        if (gRes && gRes.address_components) {
+          for (const c of gRes.address_components) {
+            if (c.types && c.types.includes('postal_code') && /^\d{6}$/.test(c.long_name)) {
+              gPostalCode = c.long_name;
+              break;
+            }
+          }
+        }
+
+        // If we extracted a postal code for this locality, test if it exists in our radar database
+        if (gPostalCode) {
+          console.log(`[Smart Search] Google resolved "${rawQuery}" to postal code: ${gPostalCode}`);
+          const pinRes = await fetch(`/api/pincode_details?month=${currentMonth}&pincode=${gPostalCode}`);
+          const pinData = await pinRes.json();
+          if (pinData && pinData.summary) {
+            await drillDownToPincode(gPostalCode, pinData);
+            return;
+          }
+        }
+
+        // 6. District / City Boundary Matching with Google
         const googleExactPoly = extractGoogleExactPolygon(gRes);
-
-        // CASE A: Google has an exact irregular polygon shape!
         if (googleExactPoly) {
-          console.log("[Smart Boundary Engine] Google provided exact polygon shape:", googleExactPoly);
           if (googlePolygonLayer) map.removeLayer(googlePolygonLayer);
           googlePolygonLayer = L.geoJson(googleExactPoly, {
             style: {
@@ -1112,10 +1378,10 @@
             }
           }).addTo(map);
 
-          updatePolygonBadge('google_exact', gRes.formatted_address || query);
+          updatePolygonBadge('google_exact', gRes.formatted_address || rawQuery);
           map.fitBounds(googlePolygonLayer.getBounds(), { padding: [25, 25] });
           document.getElementById('backBtn').style.display = 'block';
-          document.getElementById('breadcrumbText').innerText = `All India > ${gRes.formatted_address || query}`;
+          document.getElementById('breadcrumbText').innerText = `All India > ${gRes.formatted_address || rawQuery}`;
           
           const matchedD = findMatchedDistrict(qLower, gRes);
           if (matchedD) {
@@ -1131,41 +1397,13 @@
           return;
         }
 
-        // CASE B: Google does not have an exact polygon, or only provides a square/bounding box
-        if (gRes && (gRes.geometry.bounds || gRes.geometry.viewport)) {
-          console.log(`[Smart Boundary Engine] Google only returned bounding box/square for "${query}". Discarding square! Overriding with verified local 2024 dataset polygon.`);
-        }
-
-        // Search in verified local 2024 LGD dataset
         const matched = findMatchedDistrict(qLower, gRes);
         if (matched) {
-          if (googlePolygonLayer) {
-            map.removeLayer(googlePolygonLayer);
-            googlePolygonLayer = null;
-          }
-
-          selectedState = matched.state;
-          let distName = matched.district;
-          if (distName === 'Greater Bombay' || distName === 'Mumbai Suburban' || distName === 'Mumbai City') {
-            distName = 'Mumbai';
-          }
-          selectedDistrict = distName;
-          selectedPincode = null;
-          document.getElementById('backBtn').style.display = 'block';
-          document.getElementById('breadcrumbText').innerText = `All India > ${matched.state} > ${distName}`;
-          updatePolygonBadge('local_dataset');
-
-          const bounds = L.geoJson(matched.feature).getBounds();
-          map.fitBounds(bounds, { padding: [25, 25] });
-
-          renderStatePolygons();
-          renderDistrictPolygons();
-          await renderHeatAndPins();
-          await loadDistrictDetails(distName, matched.state);
+          await drillDownToDistrict(matched);
           return;
         }
 
-        // Search state in stateGeojson
+        // State fuzzy match fallback
         if (stateGeojson && stateGeojson.features) {
           for (const f of stateGeojson.features) {
             const s = (f.properties.state_name || '').toLowerCase();
@@ -1181,7 +1419,7 @@
           }
         }
 
-        alert(`Area or PIN '${query}' not found. Please enter a valid 6-digit PIN or city/district name.`);
+        alert(`Area or PIN '${rawQuery}' not found in the radar database. Please try a pincode, micro-market, or district name.`);
       } catch (err) {
         console.error("Search processing error:", err);
       } finally {
