@@ -147,6 +147,19 @@
       }
     }
 
+    function formatSmartInflow(val) {
+      const v = Number(val) || 0;
+      if (v <= 0) return '₹0';
+      if (v >= 10000) return `₹${Math.round(v).toLocaleString()} Cr`;
+      if (v >= 1000) return `₹${(v / 1000).toFixed(1)}k Cr`;
+      if (v >= 10) return `₹${v.toFixed(1)} Cr`;
+      if (v >= 1) return `₹${v.toFixed(2)} Cr`;
+      const lakhs = v * 100;
+      if (lakhs >= 1) return `₹${lakhs.toFixed(1)} L`;
+      if (lakhs >= 0.05) return `₹${lakhs.toFixed(2)} L`;
+      return `₹${Math.round(v * 10000000).toLocaleString()}`;
+    }
+
     function renderTopTicker(s) {
       if (!s) return;
       document.getElementById('topNatAum').innerText = `₹${(s.nat_aum/100000).toFixed(2)} L Cr`;
@@ -155,10 +168,15 @@
       const gross = s.nat_gross || 0;
       const sip = s.nat_sip || 0;
       const stp = s.nat_stp || 0;
-      const lumpsum = s.nat_lump !== undefined ? s.nat_lump : Math.max(0, (s.nat_sales || 0) - sip);
+      let lumpsum = (s.nat_lump !== undefined && s.nat_lump !== null && Number(s.nat_lump) > 0) 
+        ? Number(s.nat_lump) 
+        : Math.max(0, (s.nat_sales || 0) - sip);
+      if (lumpsum <= 0 && gross > 0) {
+        lumpsum = Math.max(0, gross - sip);
+      }
       const breakdownEl = document.getElementById('topNatInflowBreakdown');
       if (breakdownEl) {
-        breakdownEl.innerText = `Lump: ₹${Math.round(lumpsum).toLocaleString()} Cr | SIP: ₹${Math.round(sip).toLocaleString()} Cr | STP: ₹${Math.round(stp).toLocaleString()} Cr`;
+        breakdownEl.innerHTML = `Lump: <b>${formatSmartInflow(lumpsum)}</b> | SIP: <b>${formatSmartInflow(sip)}</b> | STP: <b>${formatSmartInflow(stp)}</b>`;
       }
 
       document.getElementById('topNatOutflows').innerText = `₹${Math.round(s.nat_outflow).toLocaleString()} Cr`;
@@ -742,10 +760,15 @@
       document.getElementById('sideRetention').innerText = `Retention: ${retPct.toFixed(1)}%`;
 
       // Inflow Sourcing Breakdown: Lump | SIP | STP
-      const lump = (lumpsum !== undefined && lumpsum !== null) ? lumpsum : Math.max(0, gross - sip - stp);
+      let lump = (lumpsum !== undefined && lumpsum !== null && Number(lumpsum) > 0) 
+        ? Number(lumpsum) 
+        : Math.max(0, gross - sip - stp);
+      if (lump <= 0 && gross > 0) {
+        lump = Math.max(0, gross - sip);
+      }
       const inflowEl = document.getElementById('sideInflowBreakdown');
       if (inflowEl) {
-        inflowEl.innerHTML = `<span>Inflows: <b>Lump: ₹${lump.toFixed(1)} Cr</b> | <b>SIP: ₹${sip.toFixed(1)} Cr</b> | <b>STP: ₹${stp.toFixed(1)} Cr</b></span>`;
+        inflowEl.innerHTML = `<span>Inflows: <b style="color:#2563eb;">Lump: ${formatSmartInflow(lump)}</b> | <b style="color:#16a34a;">SIP: ${formatSmartInflow(sip)}</b> | <b style="color:#d97706;">STP: ${formatSmartInflow(stp)}</b></span>`;
       }
 
       // 4 Tiles
@@ -767,6 +790,7 @@
       schemes.forEach(s => {
         let v = 0;
         if (currentSchemeTab === 'gross') v = s.gross_inflows_cr || 0;
+        else if (currentSchemeTab === 'lump') v = (s.lumpsum_cr !== undefined ? s.lumpsum_cr : (s.lumpsum_inflows_cr || 0));
         else if (currentSchemeTab === 'sip') v = s.active_sip_cr || 0;
         else v = s.closing_aum_cr || 0;
 
@@ -799,6 +823,8 @@
     function setSchemeTab(tab) {
       currentSchemeTab = tab;
       document.getElementById('tabGross').className = 't-btn ' + (tab === 'gross' ? 'active' : '');
+      const btnLump = document.getElementById('tabLump');
+      if (btnLump) btnLump.className = 't-btn ' + (tab === 'lump' ? 'active' : '');
       document.getElementById('tabSip').className = 't-btn ' + (tab === 'sip' ? 'active' : '');
       document.getElementById('tabAum').className = 't-btn ' + (tab === 'aum' ? 'active' : '');
       calculateAndRenderAssetMix(currentSchemes);
@@ -809,16 +835,21 @@
       const cont = document.getElementById('schemeContainer');
       let sorted = [...currentSchemes];
       if (currentSchemeTab === 'gross') sorted.sort((a, b) => b.gross_inflows_cr - a.gross_inflows_cr);
+      else if (currentSchemeTab === 'lump') sorted.sort((a, b) => ((b.lumpsum_cr !== undefined ? b.lumpsum_cr : (b.lumpsum_inflows_cr || 0)) - (a.lumpsum_cr !== undefined ? a.lumpsum_cr : (a.lumpsum_inflows_cr || 0))));
       else if (currentSchemeTab === 'sip') sorted.sort((a, b) => b.active_sip_cr - a.active_sip_cr);
       else sorted.sort((a, b) => b.closing_aum_cr - a.closing_aum_cr);
 
       cont.innerHTML = sorted.slice(0, 10).map((s, idx) => {
         let valStr = '';
         let subStr = '';
+        const lumpVal = (s.lumpsum_cr !== undefined ? s.lumpsum_cr : (s.lumpsum_inflows_cr || 0));
         if (currentSchemeTab === 'gross') {
           const netSign = s.net_added_cr >= 0 ? '+' : '-';
           valStr = `₹${s.gross_inflows_cr.toFixed(2)} Cr`;
-          subStr = `Net: ${netSign}₹${Math.abs(s.net_added_cr).toFixed(2)} Cr | ${s.active_mfds.toLocaleString()} MFDs`;
+          subStr = `Net: ${netSign}₹${Math.abs(s.net_added_cr).toFixed(2)} Cr | Lump: ${formatSmartInflow(lumpVal)} | ${s.active_mfds.toLocaleString()} MFDs`;
+        } else if (currentSchemeTab === 'lump') {
+          valStr = formatSmartInflow(lumpVal);
+          subStr = `Tactical Fresh Purchase | ${s.active_mfds.toLocaleString()} MFDs`;
         } else if (currentSchemeTab === 'sip') {
           valStr = s.active_sip_cr >= 1 ? `₹${s.active_sip_cr.toFixed(2)} Cr` : `₹${(s.active_sip_cr * 100).toFixed(1)} L`;
           subStr = `${(s.active_sip_count || 0).toLocaleString()} debits (₹${Math.round(s.avg_sip_ticket_inr || 0)})`;

@@ -294,7 +294,11 @@ def get_national_summary(month: str) -> Dict[str, Any]:
                 ROUND(SUM(active_sip_cr), 2) as nat_sip,
                 ROUND(SUM(active_stp_cr), 2) as nat_stp,
                 ROUND(SUM(lumpsum_inflows_cr), 2) as nat_sales,
-                ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as nat_lump,
+                ROUND(CASE 
+                    WHEN SUM(lumpsum_inflows_cr) > SUM(active_sip_cr) THEN SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)
+                    WHEN SUM(gross_inflows_cr) > (SUM(active_sip_cr) + SUM(active_stp_cr)) THEN SUM(gross_inflows_cr) - SUM(active_sip_cr) - SUM(active_stp_cr)
+                    ELSE SUM(lumpsum_inflows_cr)
+                END, 2) as nat_lump,
                 SUM(active_sip_count) as nat_sip_cnt,
                 ROUND(CASE WHEN SUM(active_sip_count) > 0 THEN (SUM(active_sip_cr)*10000000.0)/SUM(active_sip_count) ELSE 0 END, 2) as avg_sip_ticket,
                 SUM(active_mfds_scheme) as nat_mfds_footprint,
@@ -309,6 +313,11 @@ def get_national_summary(month: str) -> Dict[str, Any]:
                 scheme_type, asset_class,
                 ROUND(SUM(closing_aum_cr), 2) as closing_aum_cr,
                 ROUND(SUM(gross_inflows_cr), 2) as gross_inflows_cr,
+                ROUND(SUM(lumpsum_inflows_cr), 2) as lumpsum_inflows_cr,
+                ROUND(CASE 
+                    WHEN SUM(lumpsum_inflows_cr) > SUM(active_sip_cr) THEN SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)
+                    ELSE SUM(lumpsum_inflows_cr)
+                END, 2) as lumpsum_cr,
                 ROUND(SUM(redemptions_cr), 2) as redemptions_cr,
                 ROUND(SUM(net_added_cr), 2) as net_added_cr,
                 ROUND(SUM(active_sip_cr), 2) as active_sip_cr,
@@ -380,7 +389,11 @@ def get_state_details(month: str, state: str) -> Dict[str, Any]:
                 ROUND(SUM(active_sip_cr), 2) as total_sip_cr,
                 ROUND(SUM(active_stp_cr), 2) as total_stp_cr,
                 ROUND(SUM(lumpsum_inflows_cr), 2) as total_sales_cr,
-                ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as total_lumpsum_cr,
+                ROUND(CASE 
+                    WHEN SUM(lumpsum_inflows_cr) > SUM(active_sip_cr) THEN SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)
+                    WHEN SUM(gross_inflows_cr) > (SUM(active_sip_cr) + SUM(active_stp_cr)) THEN SUM(gross_inflows_cr) - SUM(active_sip_cr) - SUM(active_stp_cr)
+                    ELSE SUM(lumpsum_inflows_cr)
+                END, 2) as total_lumpsum_cr,
                 SUM(active_sip_count) as total_sip_count,
                 ROUND(CASE WHEN SUM(active_sip_count) > 0 THEN (SUM(active_sip_cr)*10000000.0)/SUM(active_sip_count) ELSE 0 END, 2) as avg_sip_ticket_inr,
                 SUM(active_mfds_scheme) as active_mfds,
@@ -396,6 +409,11 @@ def get_state_details(month: str, state: str) -> Dict[str, Any]:
                 scheme_type, asset_class,
                 ROUND(SUM(closing_aum_cr), 2) as closing_aum_cr,
                 ROUND(SUM(gross_inflows_cr), 2) as gross_inflows_cr,
+                ROUND(SUM(lumpsum_inflows_cr), 2) as lumpsum_inflows_cr,
+                ROUND(CASE 
+                    WHEN SUM(lumpsum_inflows_cr) > SUM(active_sip_cr) THEN SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)
+                    ELSE SUM(lumpsum_inflows_cr)
+                END, 2) as lumpsum_cr,
                 ROUND(SUM(redemptions_cr), 2) as redemptions_cr,
                 ROUND(SUM(net_added_cr), 2) as net_added_cr,
                 ROUND(SUM(active_sip_cr), 2) as active_sip_cr,
@@ -446,7 +464,11 @@ def get_district_details(month: str, district: str, state: Optional[str] = None)
                 ROUND(SUM(active_sip_cr), 2) as total_sip_cr,
                 ROUND(SUM(active_stp_cr), 2) as total_stp_cr,
                 ROUND(SUM(lumpsum_inflows_cr), 2) as total_sales_cr,
-                ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as total_lumpsum_cr,
+                ROUND(CASE 
+                    WHEN SUM(lumpsum_inflows_cr) > SUM(active_sip_cr) THEN SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)
+                    WHEN SUM(gross_inflows_cr) > (SUM(active_sip_cr) + SUM(active_stp_cr)) THEN SUM(gross_inflows_cr) - SUM(active_sip_cr) - SUM(active_stp_cr)
+                    ELSE SUM(lumpsum_inflows_cr)
+                END, 2) as total_lumpsum_cr,
                 SUM(active_sip_count) as total_sip_count,
                 ROUND(CASE WHEN SUM(active_sip_count) > 0 THEN (SUM(active_sip_cr)*10000000.0)/SUM(active_sip_count) ELSE 0 END, 2) as avg_sip_ticket_inr,
                 SUM(active_mfds_scheme) as total_mfds_footprint,
@@ -468,6 +490,11 @@ def get_district_details(month: str, district: str, state: Optional[str] = None)
                 scheme_type, asset_class,
                 ROUND(SUM(closing_aum_cr), 2) as closing_aum_cr,
                 ROUND(SUM(gross_inflows_cr), 2) as gross_inflows_cr,
+                ROUND(SUM(lumpsum_inflows_cr), 2) as lumpsum_inflows_cr,
+                ROUND(CASE 
+                    WHEN SUM(lumpsum_inflows_cr) > SUM(active_sip_cr) THEN SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)
+                    ELSE SUM(lumpsum_inflows_cr)
+                END, 2) as lumpsum_cr,
                 ROUND(SUM(redemptions_cr), 2) as redemptions_cr,
                 ROUND(SUM(net_added_cr), 2) as net_added_cr,
                 ROUND(SUM(active_sip_cr), 2) as active_sip_cr,
@@ -552,7 +579,11 @@ def get_pincode_details(month: str, pincode: str) -> Dict[str, Any]:
                 ROUND(SUM(avg_aum_cr), 2) as total_avg_aum_cr,
                 ROUND(SUM(gross_inflows_cr), 2) as total_gross_cr,
                 ROUND(SUM(lumpsum_inflows_cr), 2) as total_sales_cr,
-                ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as total_lumpsum_cr,
+                ROUND(CASE 
+                    WHEN SUM(lumpsum_inflows_cr) > SUM(active_sip_cr) THEN SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)
+                    WHEN SUM(gross_inflows_cr) > (SUM(active_sip_cr) + SUM(active_stp_cr)) THEN SUM(gross_inflows_cr) - SUM(active_sip_cr) - SUM(active_stp_cr)
+                    ELSE SUM(lumpsum_inflows_cr)
+                END, 2) as total_lumpsum_cr,
                 ROUND(SUM(switch_in_cr), 2) as total_switch_in_cr,
                 ROUND(SUM(redemptions_cr), 2) as total_redemptions_cr,
                 ROUND(SUM(pure_redemptions_cr), 2) as total_pure_redemptions_cr,
@@ -580,7 +611,12 @@ def get_pincode_details(month: str, pincode: str) -> Dict[str, Any]:
         cur.execute("""
             SELECT 
                 scheme_type, asset_class, closing_aum_cr, avg_aum_cr,
-                gross_inflows_cr, lumpsum_inflows_cr, switch_in_cr,
+                gross_inflows_cr, lumpsum_inflows_cr,
+                ROUND(CASE 
+                    WHEN lumpsum_inflows_cr > active_sip_cr THEN lumpsum_inflows_cr - active_sip_cr 
+                    ELSE lumpsum_inflows_cr 
+                END, 2) as lumpsum_cr,
+                switch_in_cr,
                 redemptions_cr, pure_redemptions_cr, switch_out_cr,
                 net_added_cr, active_sip_cr, active_sip_count, avg_sip_ticket_inr,
                 new_sip_cr, new_sip_count, active_stp_cr, new_stp_count,
