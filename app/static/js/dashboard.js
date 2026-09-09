@@ -1506,6 +1506,9 @@
 
       // Enhanced Section 2: Visual 100% Split + Direct Core Metrics
       const chartRowsHtml = wf.map(r => {
+        const gapBadge = r.is_gap_material 
+          ? `<span class="sip-collection-badge" title="Scheduled SIP Book: ₹${(r.sip_book_cr||0).toFixed(2)} Cr, Settled: ₹${(r.sip_realized_cr||0).toFixed(2)} Cr (${(r.sip_gap_cr||0).toFixed(2)} Cr bounce gap)">⚠️ ${r.sip_collection_pct}% Collection</span>` 
+          : '';
         return `
           <div class="sourcing-bar-row">
             <!-- 1. Month & Gross -->
@@ -1516,21 +1519,22 @@
 
             <!-- 2. 100% Stacked Sourcing Track -->
             <div class="s-row-track-wrap">
-              <div class="s-row-track" title="Gross: ₹${r.gross_cr.toFixed(2)} Cr | Lump: ${r.lump_pct}% | SIP: ${r.sip_pct}% | STP: ${r.stp_pct}%">
-                <div class="s-seg-lump" style="width:${r.lump_pct}%;" title="Lumpsum: ₹${(r.lumpsum_cr||0).toFixed(2)} Cr (${r.lump_pct}%)"></div>
-                <div class="s-seg-sip" style="width:${r.sip_pct}%;" title="SIP Harvest: ₹${(r.sip_cr||0).toFixed(2)} Cr (${r.sip_pct}%)"></div>
-                <div class="s-seg-stp" style="width:${r.stp_pct}%;" title="STP Inflow: ₹${(r.stp_cr||0).toFixed(2)} Cr (${r.stp_pct}%)"></div>
+              <div class="s-row-track" title="Gross: ₹${r.gross_cr.toFixed(2)} Cr | Tactical: ${r.lump_pct}% | Realized SIP: ${r.sip_pct}% | Switch-In: ${r.switch_pct||0}%">
+                <div class="s-seg-lump" style="width:${r.lump_pct}%;" title="Tactical Lumpsum: ₹${(r.tactical_lumpsum_cr||r.lumpsum_cr||0).toFixed(2)} Cr (${r.lump_pct}%)"></div>
+                <div class="s-seg-sip" style="width:${r.sip_pct}%;" title="Realized SIP: ₹${(r.sip_realized_cr||r.sip_cr||0).toFixed(2)} Cr (${r.sip_pct}%) | Book: ₹${(r.sip_book_cr||0).toFixed(2)} Cr"></div>
+                <div class="s-seg-switch" style="width:${r.switch_pct||0}%;" title="Switch-In: ₹${(r.switch_in_cr||0).toFixed(2)} Cr (${r.switch_pct||0}%)"></div>
               </div>
               <div class="s-row-legend">
-                <span class="s-leg-item" style="color:#2563eb;"><strong>${r.lump_pct}%</strong> Lump</span>
-                <span class="s-leg-item" style="color:#10b981;"><strong>${r.sip_pct}%</strong> SIP</span>
-                <span class="s-leg-item" style="color:#f59e0b;"><strong>${r.stp_pct}%</strong> STP</span>
+                <span class="s-leg-item" style="color:#2563eb;"><strong>${r.lump_pct}%</strong> Tactical</span>
+                <span class="s-leg-item" style="color:#10b981;"><strong>${r.sip_pct}%</strong> Realized SIP</span>
+                <span class="s-leg-item" style="color:#0d9488;"><strong>${r.switch_pct||0}%</strong> Switch-In</span>
+                ${gapBadge}
               </div>
             </div>
 
             <!-- 3. Monthly SIP Harvest -->
             <div class="s-metric-cell">
-              <span class="s-metric-val sip-green">₹${(r.sip_cr||0).toFixed(2)} Cr</span>
+              <span class="s-metric-val sip-green">₹${(r.sip_realized_cr||r.sip_cr||0).toFixed(2)} Cr</span>
               <span class="s-metric-sub">${formatDebits(r.sip_count||0)}</span>
             </div>
 
@@ -1558,7 +1562,7 @@
       // Trajectory Delta Summary (First vs Last Month)
       const firstW = wf[0] || {};
       const lastW = wf[wf.length - 1] || {};
-      const dSip = (lastW.sip_cr || 0) - (firstW.sip_cr || 0);
+      const dSip = (lastW.sip_realized_cr || lastW.sip_cr || 0) - (firstW.sip_realized_cr || firstW.sip_cr || 0);
       const dSipSign = dSip >= 0 ? '+' : '';
       const dTicket = Math.round((lastW.avg_sip_ticket_inr || 0) - (firstW.avg_sip_ticket_inr || 0));
       const dTicketSign = dTicket >= 0 ? '+' : '';
@@ -1573,7 +1577,7 @@
           <div class="s-traj-items">
             <div class="s-traj-stat">
               <span>SIP Run-Rate:</span>
-              <strong>₹${(firstW.sip_cr||0).toFixed(1)} ➔ ₹${(lastW.sip_cr||0).toFixed(1)} Cr</strong>
+              <strong>₹${(firstW.sip_realized_cr||firstW.sip_cr||0).toFixed(1)} ➔ ₹${(lastW.sip_realized_cr||lastW.sip_cr||0).toFixed(1)} Cr</strong>
               <span class="${dSip >= 0 ? 'delta-pos' : 'delta-neg'}">(${dSipSign}₹${dSip.toFixed(1)} Cr)</span>
             </div>
             <div class="s-traj-stat">
@@ -1597,16 +1601,23 @@
 
       // Precision Sourcing & Distribution Table
       const tableRowsHtml = wf.map(r => {
+        const gapBadge = r.is_gap_material 
+          ? `<div style="font-size:0.62rem; color:#b45309; font-weight:700;">⚠️ ${r.sip_collection_pct}% coll</div>` 
+          : '';
         return `
           <tr>
             <td style="font-weight:700; color:#0f172a;">${r.month}</td>
             <td class="t-right" style="font-weight:700;">₹${r.gross_cr.toFixed(2)} Cr</td>
-            <td class="t-right" style="color:#2563eb;">₹${(r.lumpsum_cr||0).toFixed(2)} Cr</td>
+            <td class="t-right" style="color:#2563eb; font-weight:600;">₹${(r.tactical_lumpsum_cr||r.lumpsum_cr||0).toFixed(2)} Cr</td>
             <td class="t-center"><span style="color:#2563eb; font-weight:700;">${r.lump_pct}%</span></td>
-            <td class="t-right" style="color:#15803d; font-weight:700;">₹${(r.sip_cr||0).toFixed(2)} Cr</td>
+            <td class="t-right" style="color:#15803d; font-weight:700;">
+              ₹${(r.sip_realized_cr||r.sip_cr||0).toFixed(2)} Cr
+              ${gapBadge}
+            </td>
             <td class="t-center"><span style="color:#15803d; font-weight:700;">${r.sip_pct}%</span></td>
-            <td class="t-right" style="color:#d97706;">₹${(r.stp_cr||0).toFixed(2)} Cr</td>
-            <td class="t-center"><span style="color:#d97706; font-weight:700;">${r.stp_pct}%</span></td>
+            <td class="t-right" style="color:#0d9488; font-weight:600;">₹${(r.switch_in_cr||0).toFixed(2)} Cr</td>
+            <td class="t-center"><span style="color:#0d9488; font-weight:700;">${r.switch_pct||0}%</span></td>
+            <td class="t-right" style="color:#64748b; font-size:0.75rem;" title="STP Memo (subset of Switch-In)">₹${(r.stp_cr||0).toFixed(2)} Cr</td>
             <td class="t-right">${(r.sip_count||0).toLocaleString()}</td>
             <td class="t-right" style="font-weight:700; color:#0f172a;">₹${Math.round(r.avg_sip_ticket_inr||0).toLocaleString()}</td>
             <td class="t-right" style="font-weight:700; color:#0369a1;">${(r.active_mfds||0).toLocaleString()}</td>
@@ -1620,12 +1631,12 @@
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div>
               <span style="font-size:0.82rem; font-weight:800; color:#0f172a;">Monthly Sourcing Split & Systematic Distribution Engine</span>
-              <div style="font-size:0.67rem; color:#64748b;">100% Inflow Stack with Direct SIP Harvest, Avg Ticket, Active MFD Network & Closing AUM</div>
+              <div style="font-size:0.67rem; color:#64748b;">100% Exact Inflow Stack (Tactical + Realized SIP + Switch-In) with SIP Collection Health</div>
             </div>
             <div style="display:flex; gap:12px; font-size:0.70rem; font-weight:600;">
               <span style="display:flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; border-radius:2px; background:#3b82f6;"></span> Tactical Lumpsum</span>
-              <span style="display:flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; border-radius:2px; background:#10b981;"></span> Compounding SIP</span>
-              <span style="display:flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; border-radius:2px; background:#f59e0b;"></span> Systematic STP</span>
+              <span style="display:flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; border-radius:2px; background:#10b981;"></span> Realized SIP</span>
+              <span style="display:flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; border-radius:2px; background:#0d9488;"></span> Switch-In</span>
             </div>
           </div>
 
@@ -1653,13 +1664,14 @@
             <thead>
               <tr>
                 <th>Month</th>
-                <th class="t-right">Total Inflow</th>
-                <th class="t-right">Lumpsum (Cr)</th>
+                <th class="t-right">Gross Inflows</th>
+                <th class="t-right">Tactical Lumpsum</th>
                 <th class="t-center">Lump Share</th>
-                <th class="t-right">SIP Book (Cr)</th>
+                <th class="t-right">Realized SIP</th>
                 <th class="t-center">SIP Share</th>
-                <th class="t-right">STP Inflow (Cr)</th>
-                <th class="t-center">STP Share</th>
+                <th class="t-right">Switch-In</th>
+                <th class="t-center">Switch Share</th>
+                <th class="t-right">STP Memo</th>
                 <th class="t-right">Active Debits</th>
                 <th class="t-right">Avg Ticket / Debit</th>
                 <th class="t-right">Active MFDs</th>

@@ -850,7 +850,22 @@
     }
     .s-seg-lump { background: #3b82f6; height: 100%; transition: width 0.3s ease; }
     .s-seg-sip { background: #10b981; height: 100%; transition: width 0.3s ease; }
+    .s-seg-switch { background: #0d9488; height: 100%; transition: width 0.3s ease; }
     .s-seg-stp { background: #f59e0b; height: 100%; transition: width 0.3s ease; }
+    
+    .sip-collection-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
+      cursor: help;
+      margin-left: 6px;
+    }
     
     .s-row-legend {
       display: flex;
