@@ -65,15 +65,9 @@ def get_trailing_3m_summary(level: str, state: Optional[str] = None, district: O
                     ROUND(SUM(redemptions_cr), 2) as outflow_cr,
                     ROUND(SUM(net_added_cr), 2) as net_cr,
                     ROUND(SUM(active_sip_cr), 2) as sip_cr,
-                    ROUND(SUM(active_sip_cr), 2) as sip_book_cr,
-                    ROUND(MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)), 2) as sip_realized_cr,
                     ROUND(SUM(active_stp_cr), 2) as stp_cr,
-                    ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as tactical_lumpsum_cr,
                     ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as lumpsum_cr,
                     ROUND(SUM(lumpsum_inflows_cr), 2) as sales_cr,
-                    ROUND(SUM(switch_in_cr), 2) as switch_in_cr,
-                    ROUND(MAX(0.0, SUM(active_sip_cr) - SUM(lumpsum_inflows_cr)), 2) as sip_gap_cr,
-                    ROUND(CASE WHEN SUM(active_sip_cr) > 0 THEN (MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)) / SUM(active_sip_cr)) * 100.0 ELSE 100.0 END, 1) as sip_collection_pct,
                     SUM(active_sip_count) as sip_count,
                     ROUND(CASE WHEN SUM(active_sip_count) > 0 THEN SUM(active_sip_cr)*10000000.0 / SUM(active_sip_count) ELSE 0 END, 2) as avg_sip_ticket_inr,
                     SUM(active_mfds_scheme) as active_mfds,
@@ -92,15 +86,9 @@ def get_trailing_3m_summary(level: str, state: Optional[str] = None, district: O
                     ROUND(SUM(redemptions_cr), 2) as outflow_cr,
                     ROUND(SUM(net_added_cr), 2) as net_cr,
                     ROUND(SUM(active_sip_cr), 2) as sip_cr,
-                    ROUND(SUM(active_sip_cr), 2) as sip_book_cr,
-                    ROUND(MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)), 2) as sip_realized_cr,
                     ROUND(SUM(active_stp_cr), 2) as stp_cr,
-                    ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as tactical_lumpsum_cr,
                     ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as lumpsum_cr,
                     ROUND(SUM(lumpsum_inflows_cr), 2) as sales_cr,
-                    ROUND(SUM(switch_in_cr), 2) as switch_in_cr,
-                    ROUND(MAX(0.0, SUM(active_sip_cr) - SUM(lumpsum_inflows_cr)), 2) as sip_gap_cr,
-                    ROUND(CASE WHEN SUM(active_sip_cr) > 0 THEN (MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)) / SUM(active_sip_cr)) * 100.0 ELSE 100.0 END, 1) as sip_collection_pct,
                     SUM(active_sip_count) as sip_count,
                     ROUND(CASE WHEN SUM(active_sip_count) > 0 THEN SUM(active_sip_cr)*10000000.0 / SUM(active_sip_count) ELSE 0 END, 2) as avg_sip_ticket_inr,
                     SUM(active_mfds_scheme) as active_mfds,
@@ -119,15 +107,9 @@ def get_trailing_3m_summary(level: str, state: Optional[str] = None, district: O
                     ROUND(SUM(redemptions_cr), 2) as outflow_cr,
                     ROUND(SUM(net_added_cr), 2) as net_cr,
                     ROUND(SUM(active_sip_cr), 2) as sip_cr,
-                    ROUND(SUM(active_sip_cr), 2) as sip_book_cr,
-                    ROUND(MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)), 2) as sip_realized_cr,
                     ROUND(SUM(active_stp_cr), 2) as stp_cr,
-                    ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as tactical_lumpsum_cr,
                     ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as lumpsum_cr,
                     ROUND(SUM(lumpsum_inflows_cr), 2) as sales_cr,
-                    ROUND(SUM(switch_in_cr), 2) as switch_in_cr,
-                    ROUND(MAX(0.0, SUM(active_sip_cr) - SUM(lumpsum_inflows_cr)), 2) as sip_gap_cr,
-                    ROUND(CASE WHEN SUM(active_sip_cr) > 0 THEN (MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)) / SUM(active_sip_cr)) * 100.0 ELSE 100.0 END, 1) as sip_collection_pct,
                     SUM(active_sip_count) as sip_count,
                     ROUND(CASE WHEN SUM(active_sip_count) > 0 THEN SUM(active_sip_cr)*10000000.0 / SUM(active_sip_count) ELSE 0 END, 2) as avg_sip_ticket_inr,
                     SUM(active_mfds_scheme) as active_mfds,
@@ -150,15 +132,9 @@ def get_trailing_3m_summary(level: str, state: Optional[str] = None, district: O
                     ROUND(SUM(redemptions_cr), 2) as outflow_cr,
                     ROUND(SUM(net_added_cr), 2) as net_cr,
                     ROUND(SUM(active_sip_cr), 2) as sip_cr,
-                    ROUND(SUM(active_sip_cr), 2) as sip_book_cr,
-                    ROUND(MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)), 2) as sip_realized_cr,
                     ROUND(SUM(active_stp_cr), 2) as stp_cr,
-                    ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as tactical_lumpsum_cr,
                     ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as lumpsum_cr,
                     ROUND(SUM(lumpsum_inflows_cr), 2) as sales_cr,
-                    ROUND(SUM(switch_in_cr), 2) as switch_in_cr,
-                    ROUND(MAX(0.0, SUM(active_sip_cr) - SUM(lumpsum_inflows_cr)), 2) as sip_gap_cr,
-                    ROUND(CASE WHEN SUM(active_sip_cr) > 0 THEN (MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)) / SUM(active_sip_cr)) * 100.0 ELSE 100.0 END, 1) as sip_collection_pct,
                     SUM(active_sip_count) as sip_count,
                     ROUND(CASE WHEN SUM(active_sip_count) > 0 THEN SUM(active_sip_cr)*10000000.0 / SUM(active_sip_count) ELSE 0 END, 2) as avg_sip_ticket_inr,
                     MAX(pincode_total_mfds) as active_mfds,
@@ -173,21 +149,10 @@ def get_trailing_3m_summary(level: str, state: Optional[str] = None, district: O
         result = []
         for r in rows:
             d = dict(r)
-            s_book = float(d.get('sip_book_cr') or d.get('sip_cr') or 0)
-            sales = float(d.get('sales_cr') or 0)
-            s_real = float(d.get('sip_realized_cr') if d.get('sip_realized_cr') is not None else min(s_book, sales))
-            tactical = float(d.get('tactical_lumpsum_cr') if d.get('tactical_lumpsum_cr') is not None else max(0.0, sales - s_book))
-            sw = float(d.get('switch_in_cr') or 0)
-            gap = float(d.get('sip_gap_cr') if d.get('sip_gap_cr') is not None else max(0.0, s_book - s_real))
-            coll_pct = float(d.get('sip_collection_pct') if d.get('sip_collection_pct') is not None else (round((s_real / s_book * 100.0), 1) if s_book > 0 else 100.0))
-
-            d['sip_book_cr'] = round(s_book, 2)
-            d['sip_realized_cr'] = round(s_real, 2)
-            d['tactical_lumpsum_cr'] = round(tactical, 2)
-            d['lumpsum_cr'] = round(tactical, 2)
-            d['switch_in_cr'] = round(sw, 2)
-            d['sip_gap_cr'] = round(gap, 2)
-            d['sip_collection_pct'] = round(coll_pct, 1)
+            if 'lumpsum_cr' not in d or d['lumpsum_cr'] is None:
+                sales = d.get('sales_cr') or d.get('lumpsum_inflows_cr') or 0
+                sip = d.get('sip_cr') or 0
+                d['lumpsum_cr'] = round(max(0.0, sales - sip), 2)
             result.append(d)
 
         _trends_cache[cache_key] = result
@@ -327,15 +292,9 @@ def get_national_summary(month: str) -> Dict[str, Any]:
                 ROUND(SUM(redemptions_cr), 2) as nat_outflow,
                 ROUND(SUM(net_added_cr), 2) as nat_net,
                 ROUND(SUM(active_sip_cr), 2) as nat_sip,
-                ROUND(SUM(active_sip_cr), 2) as nat_sip_book,
-                ROUND(MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)), 2) as nat_sip_realized,
                 ROUND(SUM(active_stp_cr), 2) as nat_stp,
                 ROUND(SUM(lumpsum_inflows_cr), 2) as nat_sales,
                 ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as nat_lump,
-                ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as nat_tactical_lump,
-                ROUND(SUM(switch_in_cr), 2) as nat_switch_in,
-                ROUND(MAX(0.0, SUM(active_sip_cr) - SUM(lumpsum_inflows_cr)), 2) as nat_sip_gap,
-                ROUND(CASE WHEN SUM(active_sip_cr) > 0 THEN (MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)) / SUM(active_sip_cr)) * 100.0 ELSE 100.0 END, 1) as nat_sip_collection_pct,
                 SUM(active_sip_count) as nat_sip_cnt,
                 ROUND(CASE WHEN SUM(active_sip_count) > 0 THEN (SUM(active_sip_cr)*10000000.0)/SUM(active_sip_count) ELSE 0 END, 2) as avg_sip_ticket,
                 SUM(active_mfds_scheme) as nat_mfds_footprint,
@@ -419,15 +378,9 @@ def get_state_details(month: str, state: str) -> Dict[str, Any]:
                 ROUND(SUM(redemptions_cr), 2) as total_redemptions_cr,
                 ROUND(SUM(net_added_cr), 2) as total_net_added_cr,
                 ROUND(SUM(active_sip_cr), 2) as total_sip_cr,
-                ROUND(SUM(active_sip_cr), 2) as total_sip_book_cr,
-                ROUND(MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)), 2) as total_sip_realized_cr,
                 ROUND(SUM(active_stp_cr), 2) as total_stp_cr,
                 ROUND(SUM(lumpsum_inflows_cr), 2) as total_sales_cr,
                 ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as total_lumpsum_cr,
-                ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as total_tactical_lumpsum_cr,
-                ROUND(SUM(switch_in_cr), 2) as total_switch_in_cr,
-                ROUND(MAX(0.0, SUM(active_sip_cr) - SUM(lumpsum_inflows_cr)), 2) as total_sip_gap_cr,
-                ROUND(CASE WHEN SUM(active_sip_cr) > 0 THEN (MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)) / SUM(active_sip_cr)) * 100.0 ELSE 100.0 END, 1) as total_sip_collection_pct,
                 SUM(active_sip_count) as total_sip_count,
                 ROUND(CASE WHEN SUM(active_sip_count) > 0 THEN (SUM(active_sip_cr)*10000000.0)/SUM(active_sip_count) ELSE 0 END, 2) as avg_sip_ticket_inr,
                 SUM(active_mfds_scheme) as active_mfds,
@@ -491,15 +444,9 @@ def get_district_details(month: str, district: str, state: Optional[str] = None)
                 ROUND(SUM(redemptions_cr), 2) as total_redemptions_cr,
                 ROUND(SUM(net_added_cr), 2) as total_net_added_cr,
                 ROUND(SUM(active_sip_cr), 2) as total_sip_cr,
-                ROUND(SUM(active_sip_cr), 2) as total_sip_book_cr,
-                ROUND(MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)), 2) as total_sip_realized_cr,
                 ROUND(SUM(active_stp_cr), 2) as total_stp_cr,
                 ROUND(SUM(lumpsum_inflows_cr), 2) as total_sales_cr,
                 ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as total_lumpsum_cr,
-                ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as total_tactical_lumpsum_cr,
-                ROUND(SUM(switch_in_cr), 2) as total_switch_in_cr,
-                ROUND(MAX(0.0, SUM(active_sip_cr) - SUM(lumpsum_inflows_cr)), 2) as total_sip_gap_cr,
-                ROUND(CASE WHEN SUM(active_sip_cr) > 0 THEN (MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)) / SUM(active_sip_cr)) * 100.0 ELSE 100.0 END, 1) as total_sip_collection_pct,
                 SUM(active_sip_count) as total_sip_count,
                 ROUND(CASE WHEN SUM(active_sip_count) > 0 THEN (SUM(active_sip_cr)*10000000.0)/SUM(active_sip_count) ELSE 0 END, 2) as avg_sip_ticket_inr,
                 SUM(active_mfds_scheme) as total_mfds_footprint,
@@ -606,17 +553,12 @@ def get_pincode_details(month: str, pincode: str) -> Dict[str, Any]:
                 ROUND(SUM(gross_inflows_cr), 2) as total_gross_cr,
                 ROUND(SUM(lumpsum_inflows_cr), 2) as total_sales_cr,
                 ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as total_lumpsum_cr,
-                ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as total_tactical_lumpsum_cr,
                 ROUND(SUM(switch_in_cr), 2) as total_switch_in_cr,
                 ROUND(SUM(redemptions_cr), 2) as total_redemptions_cr,
                 ROUND(SUM(pure_redemptions_cr), 2) as total_pure_redemptions_cr,
                 ROUND(SUM(switch_out_cr), 2) as total_switch_out_cr,
                 ROUND(SUM(net_added_cr), 2) as total_net_added_cr,
                 ROUND(SUM(active_sip_cr), 2) as total_sip_cr,
-                ROUND(SUM(active_sip_cr), 2) as total_sip_book_cr,
-                ROUND(MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)), 2) as total_sip_realized_cr,
-                ROUND(MAX(0.0, SUM(active_sip_cr) - SUM(lumpsum_inflows_cr)), 2) as total_sip_gap_cr,
-                ROUND(CASE WHEN SUM(active_sip_cr) > 0 THEN (MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)) / SUM(active_sip_cr)) * 100.0 ELSE 100.0 END, 1) as total_sip_collection_pct,
                 SUM(active_sip_count) as total_sip_count,
                 ROUND(CASE WHEN SUM(active_sip_count) > 0 THEN (SUM(active_sip_cr)*10000000.0)/SUM(active_sip_count) ELSE 0 END, 2) as avg_sip_ticket_inr,
                 ROUND(SUM(new_sip_cr), 2) as new_sip_cr,
@@ -714,15 +656,9 @@ def get_multi_period_analytics(
                     ROUND(SUM(redemptions_cr), 2) as outflow_cr,
                     ROUND(SUM(net_added_cr), 2) as net_cr,
                     ROUND(SUM(active_sip_cr), 2) as sip_cr,
-                    ROUND(SUM(active_sip_cr), 2) as sip_book_cr,
-                    ROUND(MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)), 2) as sip_realized_cr,
                     ROUND(SUM(active_stp_cr), 2) as stp_cr,
                     ROUND(SUM(lumpsum_inflows_cr), 2) as sales_cr,
                     ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as lumpsum_cr,
-                    ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as tactical_lumpsum_cr,
-                    ROUND(SUM(switch_in_cr), 2) as switch_in_cr,
-                    ROUND(MAX(0.0, SUM(active_sip_cr) - SUM(lumpsum_inflows_cr)), 2) as sip_gap_cr,
-                    ROUND(CASE WHEN SUM(active_sip_cr) > 0 THEN (MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)) / SUM(active_sip_cr)) * 100.0 ELSE 100.0 END, 1) as sip_collection_pct,
                     SUM(active_sip_count) as sip_count,
                     ROUND(CASE WHEN SUM(active_sip_count) > 0 THEN (SUM(active_sip_cr)*10000000.0)/SUM(active_sip_count) ELSE 0 END, 2) as avg_sip_ticket_inr,
                     SUM(active_mfds_scheme) as active_mfds,
@@ -742,15 +678,9 @@ def get_multi_period_analytics(
                     ROUND(SUM(redemptions_cr), 2) as outflow_cr,
                     ROUND(SUM(net_added_cr), 2) as net_cr,
                     ROUND(SUM(active_sip_cr), 2) as sip_cr,
-                    ROUND(SUM(active_sip_cr), 2) as sip_book_cr,
-                    ROUND(MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)), 2) as sip_realized_cr,
                     ROUND(SUM(active_stp_cr), 2) as stp_cr,
                     ROUND(SUM(lumpsum_inflows_cr), 2) as sales_cr,
                     ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as lumpsum_cr,
-                    ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as tactical_lumpsum_cr,
-                    ROUND(SUM(switch_in_cr), 2) as switch_in_cr,
-                    ROUND(MAX(0.0, SUM(active_sip_cr) - SUM(lumpsum_inflows_cr)), 2) as sip_gap_cr,
-                    ROUND(CASE WHEN SUM(active_sip_cr) > 0 THEN (MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)) / SUM(active_sip_cr)) * 100.0 ELSE 100.0 END, 1) as sip_collection_pct,
                     SUM(active_sip_count) as sip_count,
                     ROUND(CASE WHEN SUM(active_sip_count) > 0 THEN (SUM(active_sip_cr)*10000000.0)/SUM(active_sip_count) ELSE 0 END, 2) as avg_sip_ticket_inr,
                     SUM(active_mfds_scheme) as active_mfds,
@@ -762,6 +692,27 @@ def get_multi_period_analytics(
             ent_title = state or "State Tier"
             ent_subtitle = "State-Level Macro Capital Telemetry"
         elif level == 'district':
+            query = f"""
+                SELECT 
+                    month,
+                    ROUND(SUM(closing_aum_cr), 2) as aum_cr,
+                    ROUND(SUM(gross_inflows_cr), 2) as gross_cr,
+                    ROUND(SUM(redemptions_cr), 2) as outflow_cr,
+                    ROUND(SUM(net_added_cr), 2) as net_cr,
+                    ROUND(SUM(active_sip_cr), 2) as sip_cr,
+                    ROUND(SUM(active_stp_cr), 2) as stp_cr,
+                    ROUND(SUM(lumpsum_inflows_cr), 2) as sales_cr,
+                    ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as lumpsum_cr,
+                    SUM(active_sip_count) as sip_count,
+                    ROUND(CASE WHEN SUM(active_sip_count) > 0 THEN (SUM(active_sip_cr)*10000000.0)/SUM(active_sip_count) ELSE 0 END, 2) as avg_sip_ticket_inr,
+                    SUM(active_mfds_scheme) as active_mfds,
+                    ROUND(CASE WHEN SUM(gross_inflows_cr) > 0 THEN (SUM(net_added_cr)/SUM(gross_inflows_cr))*100.0 ELSE 0 END, 2) as retention_pct
+                """
+            args = [district, *months]
+            if state:
+                query += " AND state = ?"
+                args.append(state)
+            query += f" FROM pincode_scheme_monthly WHERE district = ? AND month IN ({placeholders})"
             if state:
                 query = f"""
                 SELECT 
@@ -771,15 +722,9 @@ def get_multi_period_analytics(
                     ROUND(SUM(redemptions_cr), 2) as outflow_cr,
                     ROUND(SUM(net_added_cr), 2) as net_cr,
                     ROUND(SUM(active_sip_cr), 2) as sip_cr,
-                    ROUND(SUM(active_sip_cr), 2) as sip_book_cr,
-                    ROUND(MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)), 2) as sip_realized_cr,
                     ROUND(SUM(active_stp_cr), 2) as stp_cr,
                     ROUND(SUM(lumpsum_inflows_cr), 2) as sales_cr,
                     ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as lumpsum_cr,
-                    ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as tactical_lumpsum_cr,
-                    ROUND(SUM(switch_in_cr), 2) as switch_in_cr,
-                    ROUND(MAX(0.0, SUM(active_sip_cr) - SUM(lumpsum_inflows_cr)), 2) as sip_gap_cr,
-                    ROUND(CASE WHEN SUM(active_sip_cr) > 0 THEN (MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)) / SUM(active_sip_cr)) * 100.0 ELSE 100.0 END, 1) as sip_collection_pct,
                     SUM(active_sip_count) as sip_count,
                     ROUND(CASE WHEN SUM(active_sip_count) > 0 THEN (SUM(active_sip_cr)*10000000.0)/SUM(active_sip_count) ELSE 0 END, 2) as avg_sip_ticket_inr,
                     SUM(active_mfds_scheme) as active_mfds,
@@ -798,15 +743,9 @@ def get_multi_period_analytics(
                     ROUND(SUM(redemptions_cr), 2) as outflow_cr,
                     ROUND(SUM(net_added_cr), 2) as net_cr,
                     ROUND(SUM(active_sip_cr), 2) as sip_cr,
-                    ROUND(SUM(active_sip_cr), 2) as sip_book_cr,
-                    ROUND(MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)), 2) as sip_realized_cr,
                     ROUND(SUM(active_stp_cr), 2) as stp_cr,
                     ROUND(SUM(lumpsum_inflows_cr), 2) as sales_cr,
                     ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as lumpsum_cr,
-                    ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as tactical_lumpsum_cr,
-                    ROUND(SUM(switch_in_cr), 2) as switch_in_cr,
-                    ROUND(MAX(0.0, SUM(active_sip_cr) - SUM(lumpsum_inflows_cr)), 2) as sip_gap_cr,
-                    ROUND(CASE WHEN SUM(active_sip_cr) > 0 THEN (MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)) / SUM(active_sip_cr)) * 100.0 ELSE 100.0 END, 1) as sip_collection_pct,
                     SUM(active_sip_count) as sip_count,
                     ROUND(CASE WHEN SUM(active_sip_count) > 0 THEN (SUM(active_sip_cr)*10000000.0)/SUM(active_sip_count) ELSE 0 END, 2) as avg_sip_ticket_inr,
                     SUM(active_mfds_scheme) as active_mfds,
@@ -828,15 +767,9 @@ def get_multi_period_analytics(
                     ROUND(SUM(redemptions_cr), 2) as outflow_cr,
                     ROUND(SUM(net_added_cr), 2) as net_cr,
                     ROUND(SUM(active_sip_cr), 2) as sip_cr,
-                    ROUND(SUM(active_sip_cr), 2) as sip_book_cr,
-                    ROUND(MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)), 2) as sip_realized_cr,
                     ROUND(SUM(active_stp_cr), 2) as stp_cr,
                     ROUND(SUM(lumpsum_inflows_cr), 2) as sales_cr,
                     ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as lumpsum_cr,
-                    ROUND(MAX(0.0, SUM(lumpsum_inflows_cr) - SUM(active_sip_cr)), 2) as tactical_lumpsum_cr,
-                    ROUND(SUM(switch_in_cr), 2) as switch_in_cr,
-                    ROUND(MAX(0.0, SUM(active_sip_cr) - SUM(lumpsum_inflows_cr)), 2) as sip_gap_cr,
-                    ROUND(CASE WHEN SUM(active_sip_cr) > 0 THEN (MIN(SUM(active_sip_cr), SUM(lumpsum_inflows_cr)) / SUM(active_sip_cr)) * 100.0 ELSE 100.0 END, 1) as sip_collection_pct,
                     SUM(active_sip_count) as sip_count,
                     ROUND(CASE WHEN SUM(active_sip_count) > 0 THEN (SUM(active_sip_cr)*10000000.0)/SUM(active_sip_count) ELSE 0 END, 2) as avg_sip_ticket_inr,
                     MAX(pincode_total_mfds) as active_mfds,
@@ -874,14 +807,8 @@ def get_multi_period_analytics(
                 'outflow_cr': 0.0,
                 'net_cr': 0.0,
                 'sip_cr': 0.0,
-                'sip_book_cr': 0.0,
-                'sip_realized_cr': 0.0,
                 'stp_cr': 0.0,
                 'lumpsum_cr': 0.0,
-                'tactical_lumpsum_cr': 0.0,
-                'switch_in_cr': 0.0,
-                'sip_gap_cr': 0.0,
-                'sip_collection_pct': 100.0,
                 'sip_count': 0,
                 'avg_sip_ticket_inr': 0.0,
                 'active_mfds': 0,
@@ -890,47 +817,36 @@ def get_multi_period_analytics(
             g = float(row.get('gross_cr') or 0)
             o = float(row.get('outflow_cr') or 0)
             n = float(row.get('net_cr') or 0)
-            s_book = float(row.get('sip_book_cr') or row.get('sip_cr') or 0)
-            sales = float(row.get('sales_cr') or 0)
-            s_real = float(row.get('sip_realized_cr') if row.get('sip_realized_cr') is not None else min(s_book, sales))
-            lump = float(row.get('tactical_lumpsum_cr') if row.get('tactical_lumpsum_cr') is not None else max(0.0, sales - s_book))
-            sw = float(row.get('switch_in_cr') or 0)
+            s = float(row.get('sip_cr') or 0)
             stp = float(row.get('stp_cr') or 0)
-            gap = float(row.get('sip_gap_cr') if row.get('sip_gap_cr') is not None else max(0.0, s_book - s_real))
-            coll_pct = float(row.get('sip_collection_pct') if row.get('sip_collection_pct') is not None else (round((s_real / s_book * 100.0), 1) if s_book > 0 else 100.0))
-
+            lump = float(row.get('lumpsum_cr') or 0)
+            if lump == 0 and g > 0:
+                sales = float(row.get('sales_cr') or 0)
+                if sales > 0:
+                    lump = max(0.0, sales - s)
+                else:
+                    lump = max(0.0, g - s - stp)
             row['lumpsum_cr'] = round(lump, 2)
-            row['tactical_lumpsum_cr'] = round(lump, 2)
-            row['sip_cr'] = round(s_real, 2)
-            row['sip_realized_cr'] = round(s_real, 2)
-            row['sip_book_cr'] = round(s_book, 2)
-            row['switch_in_cr'] = round(sw, 2)
-            row['sip_gap_cr'] = round(gap, 2)
-            row['sip_collection_pct'] = round(coll_pct, 1)
-            row['is_gap_material'] = bool(gap >= 0.01 and coll_pct < 99.0)
 
-            # Exact 100% Inflow Stack: Tactical Lumpsum + Realized SIP + Switch-In
-            tot_src = lump + s_real + sw
+            tot_src = lump + s + stp
             if tot_src > 0:
                 row['lump_pct'] = round((lump / tot_src) * 100.0, 1)
-                row['sip_pct'] = round((s_real / tot_src) * 100.0, 1)
-                row['switch_pct'] = round((sw / tot_src) * 100.0, 1)
+                row['sip_pct'] = round((s / tot_src) * 100.0, 1)
                 row['stp_pct'] = round((stp / tot_src) * 100.0, 1)
             else:
                 row['lump_pct'] = 0.0
                 row['sip_pct'] = 0.0
-                row['switch_pct'] = 0.0
                 row['stp_pct'] = 0.0
 
             waterfall.append(row)
             tot_net += n
             tot_gross += g
             tot_outflow += o
-            tot_sip += s_real
+            tot_sip += s
             tot_stp += stp
             tot_lumpsum += lump
             latest_aum = float(row.get('aum_cr') or 0)
-            latest_sip_book = s_book
+            latest_sip_book = s
             latest_active_mfds = int(row.get('active_mfds') or 0)
 
         overall_retention = round((tot_net / tot_gross) * 100.0, 1) if tot_gross > 0 else 0.0
@@ -939,32 +855,28 @@ def get_multi_period_analytics(
         sourcing = []
         for row in waterfall:
             g = float(row.get('gross_cr') or 0)
-            s_real = float(row.get('sip_realized_cr') or 0)
-            s_book = float(row.get('sip_book_cr') or 0)
-            sw = float(row.get('switch_in_cr') or 0)
+            s = float(row.get('sip_cr') or 0)
             stp = float(row.get('stp_cr') or 0)
-            lump = float(row.get('tactical_lumpsum_cr') or 0)
-            gap = float(row.get('sip_gap_cr') or 0)
-            coll_pct = float(row.get('sip_collection_pct') or 100.0)
+            lump = float(row.get('lumpsum_cr') or 0)
+            
+            total_source = lump + s + stp
+            if total_source > 0:
+                lump_pct = round((lump / total_source) * 100.0, 1)
+                sip_pct = round((s / total_source) * 100.0, 1)
+                stp_pct = round((stp / total_source) * 100.0, 1)
+            else:
+                lump_pct, sip_pct, stp_pct = 0.0, 0.0, 0.0
 
             sourcing.append({
                 'month': row['month'],
                 'gross_cr': round(g, 2),
                 'lumpsum_cr': round(lump, 2),
-                'tactical_lumpsum_cr': round(lump, 2),
-                'lump_pct': row.get('lump_pct', 0.0),
-                'lumpsum_pct': row.get('lump_pct', 0.0),
-                'sip_cr': round(s_real, 2),
-                'sip_realized_cr': round(s_real, 2),
-                'sip_book_cr': round(s_book, 2),
-                'sip_pct': row.get('sip_pct', 0.0),
-                'switch_in_cr': round(sw, 2),
-                'switch_pct': row.get('switch_pct', 0.0),
+                'lump_pct': lump_pct,
+                'lumpsum_pct': lump_pct,
+                'sip_cr': round(s, 2),
+                'sip_pct': sip_pct,
                 'stp_cr': round(stp, 2),
-                'stp_pct': row.get('stp_pct', 0.0),
-                'sip_gap_cr': round(gap, 2),
-                'sip_collection_pct': round(coll_pct, 1),
-                'is_gap_material': bool(gap >= 0.01 and coll_pct < 99.0)
+                'stp_pct': stp_pct
             })
 
         # 2. Scheme Rotation Matrix (What Was Selling When)
